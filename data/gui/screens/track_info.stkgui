@@ -72,7 +72,7 @@
                         </div>
                         <spacer width="3%"/>
                         <label id="option-text" proportion="3" I18N="In the track info screen" text_align="left" align="center"/>
-                    </div>
+                    </div>layout="horizontal-row"
                    
                     <spacer width="1" height="1%"/>
                     
@@ -110,10 +110,10 @@
                 
                 <spacer width="1" height="2%"/>
                 
-                <buttonbar id="buttons" height="17%" width="100%" align="center">
-                    <icon-button id="start" width="64" height="64" icon="gui/icons/green_check.png"
+                <div height="17%" width="100%" align="center" layout="horizontal-row">
+                    <icon-button id="start" height="100%" proportion="1" icon="gui/icons/green_check.png"
                             I18N="In the track info screen" text="Start Race"/>
-                </buttonbar>
+                </div>
             </div>
             
             <spacer width="1" height="2%"/>

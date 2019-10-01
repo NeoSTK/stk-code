@@ -38,8 +38,6 @@ void ServerConfigurationDialog::beforeAddingWidgets()
     m_more_options_spinner = getWidget<SpinnerWidget>("more-options-spinner");
     assert(m_more_options_spinner != NULL);
 
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_game_mode_widget = getWidget<RibbonWidget>("gamemode");
     assert(m_game_mode_widget != NULL);
     m_difficulty_widget = getWidget<RibbonWidget>("difficulty");
@@ -65,65 +63,58 @@ void ServerConfigurationDialog::init()
     gamemode->setSelection(m_prev_mode, PLAYER_ID_GAME_MASTER);
 
     updateMoreOption(m_prev_mode);
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
-    m_options_widget->select("cancel", PLAYER_ID_GAME_MASTER);
 }   // init
 
 // ----------------------------------------------------------------------------
 GUIEngine::EventPropagation
     ServerConfigurationDialog::processEvent(const std::string& source)
 {
-    if (source == m_options_widget->m_properties[PROP_ID])
+    if (source == m_cancel_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-            m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_cancel_widget->m_properties[PROP_ID])
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (source == m_ok_widget->m_properties[PROP_ID])
+    {
+        m_self_destroy = true;
+        NetworkString change(PROTOCOL_LOBBY_ROOM);
+        change.addUInt8(LobbyProtocol::LE_CONFIG_SERVER);
+        change.addUInt8((uint8_t)m_difficulty_widget
+            ->getSelection(PLAYER_ID_GAME_MASTER));
+        switch (m_game_mode_widget->getSelection(PLAYER_ID_GAME_MASTER))
         {
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if (selection == m_ok_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
-            NetworkString change(PROTOCOL_LOBBY_ROOM);
-            change.addUInt8(LobbyProtocol::LE_CONFIG_SERVER);
-            change.addUInt8((uint8_t)m_difficulty_widget
-                ->getSelection(PLAYER_ID_GAME_MASTER));
-            switch (m_game_mode_widget->getSelection(PLAYER_ID_GAME_MASTER))
+            case 0:
             {
-                case 0:
-                {
-                    change.addUInt8(3).addUInt8(0);
-                    break;
-                }
-                case 1:
-                {
-                    change.addUInt8(4).addUInt8(0);
-                    break;
-                }
-                case 2:
-                {
-                    int v = m_more_options_spinner->getValue();
-                    if (v == 0)
-                        change.addUInt8(7).addUInt8(0);
-                    else
-                        change.addUInt8(8).addUInt8(0);
-                    break;
-                }
-                case 3:
-                {
-                    int v = m_more_options_spinner->getValue();
-                    change.addUInt8(6).addUInt8((uint8_t)v);
-                    break;
-                }
-                default:
-                {
-                    break;
-                }
+                change.addUInt8(3).addUInt8(0);
+                break;
             }
-            STKHost::get()->sendToServer(&change, true);
-            return GUIEngine::EVENT_BLOCK;
+            case 1:
+            {
+                change.addUInt8(4).addUInt8(0);
+                break;
+            }
+            case 2:
+            {
+                int v = m_more_options_spinner->getValue();
+                if (v == 0)
+                    change.addUInt8(7).addUInt8(0);
+                else
+                    change.addUInt8(8).addUInt8(0);
+                break;
+            }
+            case 3:
+            {
+                int v = m_more_options_spinner->getValue();
+                change.addUInt8(6).addUInt8((uint8_t)v);
+                break;
+            }
+            default:
+            {
+                break;
+            }
         }
+        STKHost::get()->sendToServer(&change, true);
+        return GUIEngine::EVENT_BLOCK;
     }
     else if (source == m_game_mode_widget->m_properties[PROP_ID])
     {

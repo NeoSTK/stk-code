@@ -6,7 +6,7 @@
         <button id="user-id" width="12f" height="fit" align="center"/>
         <spacer height="20"/>
 
-        <box width="fit" height="fit"  layout="horizontal-row" align="center" valign="center">
+        <box height="100%" proportion="1"  layout="horizontal-row" align="center" valign="center">
             <spacer width="25"/>
             <label I18N="In the networking menu" align="center"
                 text="Enable splitscreen or player handicaps" text_align="right"/>
@@ -20,20 +20,20 @@
 
         <spacer height="15" width="10"/>
         
-        <buttonbar id="menu_toprow" proportion="3" width="90%" align="center">
-            <icon-button id="lan" width="128" height="128"
+        <div proportion="3" width="90%" align="center" layout="horizontal-row">
+            <icon-button id="lan" height="100%" proportion="1"
                          icon="gui/icons/menu_multi.png" focus_icon="gui/icons/menu_multi_focus.png"
                          I18N="Networking menu button" text="Local networking"/>
-            <icon-button id="wan" width="128" height="128"
+            <icon-button id="wan" height="100%" proportion="1"
                          icon="gui/icons/menu_multi.png" focus_icon="gui/icons/menu_multi_focus.png"
                          I18N="Networking menu button" text="Global networking"/>
-            <icon-button id="enter-address" width="128" height="128"
+            <icon-button id="enter-address" height="100%" proportion="1"
                          icon="gui/icons/online/menu_quick_play.png" focus_icon="gui/icons/online/menu_quick_play_hover.png"
                          I18N="Networking menu button" text="Enter server address"/>
-            <icon-button id="online" width="128" height="128"
+            <icon-button id="online" height="100%" proportion="1"
                          icon="gui/icons/menu_online.png" focus_icon="gui/icons/menu_online_focus.png"
                          I18N="Networking menu button" text="Your profile"/>
-        </buttonbar>
+        </div>
 
         <spacer height="10%" width="10"/>
 

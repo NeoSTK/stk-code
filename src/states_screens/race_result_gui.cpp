@@ -277,202 +277,197 @@ void RaceResultGUI::eventCallback(GUIEngine::Widget* widget,
         displayScreenShots();
     }
     
-    if(name == "operations")
+    // If we're playing online :
+    if (World::getWorld()->isNetworkWorld())
     {
-        const std::string& action =
-            getWidget<GUIEngine::RibbonWidget>("operations")->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        // If we're playing online :
-        if (World::getWorld()->isNetworkWorld())
+        if (name == "left") // Continue button (return to server lobby)
         {
-            if (action == "left") // Continue button (return to server lobby)
-            {
-                // Signal to the server that this client is back in the lobby now.
-                auto cl = LobbyProtocol::get<ClientLobby>();
-                if (cl)
-                    cl->doneWithResults();
-                getWidget<GUIEngine::IconButtonWidget>("left")->setLabel(_("Waiting for others"));
-            }
-            if (action == "right") // Quit server (return to online lan / wan menu)
-            {
-                race_manager->clearNetworkGrandPrixResult();
-                if (STKHost::existHost())
-                {
-                    STKHost::get()->shutdown();
-                }
-                race_manager->exitRace();
-                race_manager->setAIKartOverride("");
-                StateManager::get()->resetAndSetStack(
-                    NetworkConfig::get()->getResetScreens().data());
-                NetworkConfig::get()->unsetNetworking();
-            }
-            return;
+            // Signal to the server that this client is back in the lobby now.
+            auto cl = LobbyProtocol::get<ClientLobby>();
+            if (cl)
+                cl->doneWithResults();
+            getWidget<GUIEngine::IconButtonWidget>("left")->setLabel(_("Waiting for others"));
         }
-
-        // If something was unlocked, the 'continue' button was
-        // actually used to display "Show unlocked feature(s)" text.
-        // ---------------------------------------------------------
-        int n = (int)PlayerManager::getCurrentPlayer()
-            ->getRecentlyCompletedChallenges().size();
-        if (n > 0 &&
-             (race_manager->getMajorMode() != RaceManager::MAJOR_MODE_GRAND_PRIX ||
-              race_manager->getTrackNumber() + 1 == race_manager->getNumOfTracks() ) )
-
+        if (name == "right") // Quit server (return to online lan / wan menu)
         {
-            if (action == "middle")
+            race_manager->clearNetworkGrandPrixResult();
+            if (STKHost::existHost())
             {
-                if (race_manager->getMajorMode() == RaceManager::MAJOR_MODE_GRAND_PRIX)
-                {
-                    cleanupGPProgress();
-                }
-
-                std::vector<const ChallengeData*> unlocked =
-                    PlayerManager::getCurrentPlayer()->getRecentlyCompletedChallenges();
-
-                bool gameCompleted = false;
-                for (unsigned int n = 0; n < unlocked.size(); n++)
-                {
-                    if (unlocked[n]->getChallengeId() == "fortmagma")
-                    {
-                        gameCompleted = true;
-                        break;
-                    }
-                }
-
-                if (gameCompleted)
-                {
-                    // clear the race
-
-                    // kart will no longer be available during cutscene, drop reference
-                    StateManager::get()->getActivePlayer(playerID)->setKart(NULL);
-                    PropertyAnimator::get()->clear();
-                    World::deleteWorld();
-
-                    CutsceneWorld::setUseDuration(true);
-                    StateManager::get()->enterGameState();
-                    race_manager->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
-                    race_manager->setNumKarts(0);
-                    race_manager->setNumPlayers(0);
-                    race_manager->startSingleRace("endcutscene", 999, false);
-
-                    std::vector<std::string> parts;
-                    parts.push_back("endcutscene");
-                    ((CutsceneWorld*)World::getWorld())->setParts(parts);
-                }
-                else
-                {
-                    StateManager::get()->popMenu();
-                    PropertyAnimator::get()->clear();
-                    World::deleteWorld();
-
-                    CutsceneWorld::setUseDuration(false);
-                    StateManager::get()->enterGameState();
-                    race_manager->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
-                    race_manager->setNumKarts(0);
-                    race_manager->setNumPlayers(0);
-                    race_manager->startSingleRace("featunlocked", 999, race_manager->raceWasStartedFromOverworld());
-
-                    FeatureUnlockedCutScene* scene =
-                        FeatureUnlockedCutScene::getInstance();
-
-                    scene->addTrophy(race_manager->getDifficulty(),false);
-                    scene->findWhatWasUnlocked(race_manager->getDifficulty(),unlocked);
-                    scene->push();
-                    race_manager->setAIKartOverride("");
-
-                    std::vector<std::string> parts;
-                    parts.push_back("featunlocked");
-                    ((CutsceneWorld*)World::getWorld())->setParts(parts);
-                }
-
-                PlayerManager::getCurrentPlayer()->clearUnlocked();
-
-                return;
+                STKHost::get()->shutdown();
             }
-            Log::warn("RaceResultGUI", "Incorrect event '%s' when things are unlocked.",
-                action.c_str());
-        }
-
-        // Next check for GP
-        // -----------------
-        if (race_manager->getMajorMode() == RaceManager::MAJOR_MODE_GRAND_PRIX)
-        {
-            if (action == "left" || action == "middle")        // Next GP
-            {
-                cleanupGPProgress();
-                StateManager::get()->popMenu();
-                race_manager->next();
-            }
-            else if (action == "right")        // Abort
-            {
-                new MessageDialog(_("Do you really want to abort the Grand Prix?"),
-                    MessageDialog::MESSAGE_DIALOG_CONFIRM, this, false);
-            }
-            else if (!getWidget(action.c_str())->isVisible())
-            {
-                Log::warn("RaceResultGUI", "Incorrect event '%s' when things are unlocked.",
-                    action.c_str());
-            }
-            return;
-        }
-
-        StateManager::get()->popMenu();
-        if (action == "left")        // Restart
-        {
-            race_manager->rerunRace();
-        }
-        else if (action == "middle")                 // Setup new race
-        {
-            // Save current race data for race against new ghost
-            std::string track_name = race_manager->getTrackName();
-            int laps = race_manager->getNumLaps();
-            bool reverse = race_manager->getReverseTrack();
-            bool new_ghost_race = race_manager->isRecordingRace();
-
             race_manager->exitRace();
             race_manager->setAIKartOverride("");
+            StateManager::get()->resetAndSetStack(
+                NetworkConfig::get()->getResetScreens().data());
+            NetworkConfig::get()->unsetNetworking();
+        }
+        return;
+    }
 
-            //If pressing continue quickly in a losing challenge
-            if (race_manager->raceWasStartedFromOverworld())
+    // If something was unlocked, the 'continue' button was
+    // actually used to display "Show unlocked feature(s)" text.
+    // ---------------------------------------------------------
+    int n = (int)PlayerManager::getCurrentPlayer()
+        ->getRecentlyCompletedChallenges().size();
+    if (n > 0 &&
+         (race_manager->getMajorMode() != RaceManager::MAJOR_MODE_GRAND_PRIX ||
+          race_manager->getTrackNumber() + 1 == race_manager->getNumOfTracks() ) )
+
+    {
+        if (name == "middle")
+        {
+            if (race_manager->getMajorMode() == RaceManager::MAJOR_MODE_GRAND_PRIX)
             {
-                StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
-                OverWorld::enterOverWorld();
+                cleanupGPProgress();
             }
-            // Special case : race against a newly saved ghost
-            else if (new_ghost_race)
+
+            std::vector<const ChallengeData*> unlocked =
+                PlayerManager::getCurrentPlayer()->getRecentlyCompletedChallenges();
+
+            bool gameCompleted = false;
+            for (unsigned int n = 0; n < unlocked.size(); n++)
             {
-                ReplayPlay::get()->loadAllReplayFile();
-                unsigned long long int last_uid = ReplayRecorder::get()->getLastUID();
-                ReplayPlay::get()->setReplayFileByUID(last_uid);
+                if (unlocked[n]->getChallengeId() == "fortmagma")
+                {
+                    gameCompleted = true;
+                    break;
+                }
+            }
 
-                race_manager->setRecordRace(true);
-                race_manager->setRaceGhostKarts(true);
+            if (gameCompleted)
+            {
+                // clear the race
 
-                race_manager->setNumKarts(race_manager->getNumLocalPlayers());
+                // kart will no longer be available during cutscene, drop reference
+                StateManager::get()->getActivePlayer(playerID)->setKart(NULL);
+                PropertyAnimator::get()->clear();
+                World::deleteWorld();
 
-                // Disable accidentally unlocking of a challenge
-                PlayerManager::getCurrentPlayer()->setCurrentChallenge("");
+                CutsceneWorld::setUseDuration(true);
+                StateManager::get()->enterGameState();
+                race_manager->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
+                race_manager->setNumKarts(0);
+                race_manager->setNumPlayers(0);
+                race_manager->startSingleRace("endcutscene", 999, false);
 
-                race_manager->setReverseTrack(reverse);
-                race_manager->startSingleRace(track_name, laps, false);
+                std::vector<std::string> parts;
+                parts.push_back("endcutscene");
+                ((CutsceneWorld*)World::getWorld())->setParts(parts);
             }
             else
             {
-                Screen* newStack[] = { MainMenuScreen::getInstance(),
-                                      RaceSetupScreen::getInstance(),
-                                      NULL };
-                StateManager::get()->resetAndSetStack(newStack);
-            }
-        }
-        else if (action == "right")        // Back to main
-        {
-            race_manager->exitRace();
-            race_manager->setAIKartOverride("");
-            StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
+                StateManager::get()->popMenu();
+                PropertyAnimator::get()->clear();
+                World::deleteWorld();
 
-            if (race_manager->raceWasStartedFromOverworld())
-            {
-                OverWorld::enterOverWorld();
+                CutsceneWorld::setUseDuration(false);
+                StateManager::get()->enterGameState();
+                race_manager->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
+                race_manager->setNumKarts(0);
+                race_manager->setNumPlayers(0);
+                race_manager->startSingleRace("featunlocked", 999, race_manager->raceWasStartedFromOverworld());
+
+                FeatureUnlockedCutScene* scene =
+                    FeatureUnlockedCutScene::getInstance();
+
+                scene->addTrophy(race_manager->getDifficulty(),false);
+                scene->findWhatWasUnlocked(race_manager->getDifficulty(),unlocked);
+                scene->push();
+                race_manager->setAIKartOverride("");
+
+                std::vector<std::string> parts;
+                parts.push_back("featunlocked");
+                ((CutsceneWorld*)World::getWorld())->setParts(parts);
             }
+
+            PlayerManager::getCurrentPlayer()->clearUnlocked();
+
+            return;
+        }
+        Log::warn("RaceResultGUI", "Incorrect event '%s' when things are unlocked.",
+            name.c_str());
+    }
+
+    // Next check for GP
+    // -----------------
+    if (race_manager->getMajorMode() == RaceManager::MAJOR_MODE_GRAND_PRIX)
+    {
+        if (name == "left" || name == "middle")        // Next GP
+        {
+            cleanupGPProgress();
+            StateManager::get()->popMenu();
+            race_manager->next();
+        }
+        else if (name == "right")        // Abort
+        {
+            new MessageDialog(_("Do you really want to abort the Grand Prix?"),
+                MessageDialog::MESSAGE_DIALOG_CONFIRM, this, false);
+        }
+        else if (!getWidget(name.c_str())->isVisible())
+        {
+            Log::warn("RaceResultGUI", "Incorrect event '%s' when things are unlocked.",
+                name.c_str());
+        }
+        return;
+    }
+
+    StateManager::get()->popMenu();
+    if (name == "left")        // Restart
+    {
+        race_manager->rerunRace();
+    }
+    else if (name == "middle")                 // Setup new race
+    {
+        // Save current race data for race against new ghost
+        std::string track_name = race_manager->getTrackName();
+        int laps = race_manager->getNumLaps();
+        bool reverse = race_manager->getReverseTrack();
+        bool new_ghost_race = race_manager->isRecordingRace();
+
+        race_manager->exitRace();
+        race_manager->setAIKartOverride("");
+
+        //If pressing continue quickly in a losing challenge
+        if (race_manager->raceWasStartedFromOverworld())
+        {
+            StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
+            OverWorld::enterOverWorld();
+        }
+        // Special case : race against a newly saved ghost
+        else if (new_ghost_race)
+        {
+            ReplayPlay::get()->loadAllReplayFile();
+            unsigned long long int last_uid = ReplayRecorder::get()->getLastUID();
+            ReplayPlay::get()->setReplayFileByUID(last_uid);
+
+            race_manager->setRecordRace(true);
+            race_manager->setRaceGhostKarts(true);
+
+            race_manager->setNumKarts(race_manager->getNumLocalPlayers());
+
+            // Disable accidentally unlocking of a challenge
+            PlayerManager::getCurrentPlayer()->setCurrentChallenge("");
+
+            race_manager->setReverseTrack(reverse);
+            race_manager->startSingleRace(track_name, laps, false);
+        }
+        else
+        {
+            Screen* newStack[] = { MainMenuScreen::getInstance(),
+                                  RaceSetupScreen::getInstance(),
+                                  NULL };
+            StateManager::get()->resetAndSetStack(newStack);
+        }
+    }
+    else if (name == "right")        // Back to main
+    {
+        race_manager->exitRace();
+        race_manager->setAIKartOverride("");
+        StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
+
+        if (race_manager->raceWasStartedFromOverworld())
+        {
+            OverWorld::enterOverWorld();
         }
     }
     else

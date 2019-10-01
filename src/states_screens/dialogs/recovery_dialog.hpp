@@ -44,7 +44,7 @@ public:
     virtual ~RecoveryDialog();
 
     void onEnterPressedInternal();
-    GUIEngine::EventPropagation processEvent(const std::string& eventSource);
+    GUIEngine::EventPropagation processEvent(const std::string& event_source);
     
     virtual void onUpdate(float dt);
     virtual bool onEscapePressed();
@@ -62,7 +62,6 @@ private:
 
     GUIEngine::LabelWidget * m_info_widget;
 
-    GUIEngine::RibbonWidget * m_options_widget;
     GUIEngine::IconButtonWidget * m_submit_widget;
     GUIEngine::IconButtonWidget * m_cancel_widget;
 

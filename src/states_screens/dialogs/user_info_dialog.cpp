@@ -77,8 +77,6 @@ void UserInfoDialog::beforeAddingWidgets()
     m_info_widget = getWidget<LabelWidget>("info");
     assert(m_info_widget != NULL);
 
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_remove_widget = getWidget<IconButtonWidget>("remove");
     assert(m_remove_widget != NULL);
     m_friend_widget = getWidget<IconButtonWidget>("friend");
@@ -91,7 +89,6 @@ void UserInfoDialog::beforeAddingWidgets()
     assert(m_enter_widget != NULL);
     m_cancel_widget = getWidget<IconButtonWidget>("cancel");
     assert(m_cancel_widget != NULL);
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 
     m_accept_widget->setVisible(false);
     m_decline_widget->setVisible(false);
@@ -130,8 +127,7 @@ void UserInfoDialog::beforeAddingWidgets()
 // -----------------------------------------------------------------------------
 void UserInfoDialog::init()
 {
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
-    m_options_widget->select("cancel", PLAYER_ID_GAME_MASTER);
+    m_cancel_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 }   // init
 
 // -----------------------------------------------------------------------------
@@ -185,7 +181,6 @@ void UserInfoDialog::sendFriendRequest()
     request->queue();
 
     m_processing = true;
-    m_options_widget->setActive(false);
 
 }   // sendFriendRequest
 
@@ -240,7 +235,6 @@ void UserInfoDialog::acceptFriendRequest()
     request->queue();
 
     m_processing = true;
-    m_options_widget->setActive(false);
 }   // acceptFriendRequest
 
 // -----------------------------------------------------------------------------
@@ -291,7 +285,6 @@ void UserInfoDialog::declineFriendRequest()
     request->queue();
 
     m_processing = true;
-    m_options_widget->setActive(false);
 
 }   // declineFriendRequest
 
@@ -389,51 +382,44 @@ void UserInfoDialog::removePendingFriend()
 }   // removePendingFriend
 
 // -----------------------------------------------------------------------------
-GUIEngine::EventPropagation UserInfoDialog::processEvent(const std::string& eventSource)
+GUIEngine::EventPropagation UserInfoDialog::processEvent(const std::string& event_source)
 {
-
-    if (eventSource == m_options_widget->m_properties[PROP_ID])
+    if (event_source == m_cancel_widget->m_properties[PROP_ID])
     {
-        const std::string& selection = m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_cancel_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_enter_widget->m_properties[PROP_ID])
-        {
-            ProfileManager::get()->setVisiting(m_online_profile->getID());
-            m_enter_profile = true;
-            m_options_widget->setActive(false);
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_friend_widget->m_properties[PROP_ID])
-        {
-            sendFriendRequest();
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_remove_widget->m_properties[PROP_ID])
-        {
-            if (m_online_profile->getRelationInfo() &&
-                m_online_profile->getRelationInfo()->isPending() )
-                removePendingFriend();
-            else
-                removeExistingFriend();
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_enter_widget->m_properties[PROP_ID])
+    {
+        ProfileManager::get()->setVisiting(m_online_profile->getID());
+        m_enter_profile = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_friend_widget->m_properties[PROP_ID])
+    {
+        sendFriendRequest();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_remove_widget->m_properties[PROP_ID])
+    {
+        if (m_online_profile->getRelationInfo() &&
+            m_online_profile->getRelationInfo()->isPending() )
+            removePendingFriend();
+        else
+            removeExistingFriend();
 
-            m_processing = true;
-            m_options_widget->setActive(false);
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_accept_widget->m_properties[PROP_ID])
-        {
-            acceptFriendRequest();
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_decline_widget->m_properties[PROP_ID])
-        {
-            declineFriendRequest();
-            return GUIEngine::EVENT_BLOCK;
-        }
+        m_processing = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_accept_widget->m_properties[PROP_ID])
+    {
+        acceptFriendRequest();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_decline_widget->m_properties[PROP_ID])
+    {
+        declineFriendRequest();
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent
@@ -441,7 +427,7 @@ GUIEngine::EventPropagation UserInfoDialog::processEvent(const std::string& even
 // -----------------------------------------------------------------------------
 void UserInfoDialog::deactivate()
 {
-    m_options_widget->setActive(false);
+
 }   // deactivate
 
 // -----------------------------------------------------------------------------
@@ -454,11 +440,8 @@ void UserInfoDialog::activate()
 
 void UserInfoDialog::onEnterPressedInternal()
 {
-
     //If enter was pressed while none of the buttons was focused interpret as join event
     const int playerID = PLAYER_ID_GAME_MASTER;
-    if (GUIEngine::isFocusedForPlayer(m_options_widget, playerID))
-        return;
     m_self_destroy = true;
 }
 

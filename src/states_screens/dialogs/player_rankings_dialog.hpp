@@ -52,8 +52,6 @@ private:
 
     std::shared_ptr<bool> m_fetched_ranking;
 
-    GUIEngine::RibbonWidget* m_options_widget;
-
     GUIEngine::LabelWidget* m_ranking_info;
 
     GUIEngine::ListWidget* m_top_ten;

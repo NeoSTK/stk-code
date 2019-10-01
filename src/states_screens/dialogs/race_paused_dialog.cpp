@@ -69,9 +69,6 @@ RacePausedDialog::RacePausedDialog(const float percentWidth,
         loadFromFile("online/network_ingame_dialog.stkgui");
     }
 
-    GUIEngine::RibbonWidget* back_btn = getWidget<RibbonWidget>("backbtnribbon");
-    back_btn->setFocusForPlayer( PLAYER_ID_GAME_MASTER );
-
     if (NetworkConfig::get()->isNetworking())
     {
         music_manager->pauseMusic();
@@ -137,14 +134,7 @@ void RacePausedDialog::loadedFromFile()
     // disable the "restart" button in GPs
     if (race_manager->getMajorMode() == RaceManager::MAJOR_MODE_GRAND_PRIX)
     {
-        GUIEngine::RibbonWidget* choice_ribbon =
-            getWidget<GUIEngine::RibbonWidget>("choiceribbon");
-#ifdef DEBUG
-        const bool success = choice_ribbon->deleteChild("restart");
-        assert(success);
-#else
-        choice_ribbon->deleteChild("restart");
-#endif
+        getWidget<IconButtonWidget>("restart")->setVisible(false);
     }
     // Remove "endrace" button for types not (yet?) implemented
     // Also don't show it unless the race has started. Prevents finishing in
@@ -154,13 +144,11 @@ void RacePausedDialog::loadedFromFile()
          World::getWorld()->isStartPhase() ||
          NetworkConfig::get()->isNetworking())
     {
-        GUIEngine::RibbonWidget* choice_ribbon =
-            getWidget<GUIEngine::RibbonWidget>("choiceribbon");
-        choice_ribbon->deleteChild("endrace");
+        getWidget<IconButtonWidget>("endrace")->setVisible(false);
         // No restart in network game
         if (NetworkConfig::get()->isNetworking())
         {
-            choice_ribbon->deleteChild("restart");
+            getWidget<IconButtonWidget>("restart")->setVisible(false);
         }
     }
 }
@@ -174,17 +162,14 @@ void RacePausedDialog::onEnterPressedInternal()
 // ----------------------------------------------------------------------------
 
 GUIEngine::EventPropagation
-           RacePausedDialog::processEvent(const std::string& eventSource)
+           RacePausedDialog::processEvent(const std::string& event_source)
 {
-    GUIEngine::RibbonWidget* choice_ribbon =
-            getWidget<GUIEngine::RibbonWidget>("choiceribbon");
-
-    if (eventSource == "send" && m_text_box)
+    if (event_source == "send" && m_text_box)
     {
         onEnterPressed(m_text_box->getText());
         return GUIEngine::EVENT_BLOCK;
     }
-    else if (eventSource == "emoji" && m_text_box &&
+    else if (event_source == "emoji" && m_text_box &&
         !ScreenKeyboard::isActive())
     {
         EmojiKeyboard* ek = new EmojiKeyboard(1.0f, 0.40f,
@@ -192,100 +177,94 @@ GUIEngine::EventPropagation
         ek->init();
         return GUIEngine::EVENT_BLOCK;
     }
-    else if (eventSource == "backbtnribbon")
+    else if (event_source == "backbtnribbon")
     {
         // unpausing is done in the destructor so nothing more to do here
         ModalDialog::dismiss();
         return GUIEngine::EVENT_BLOCK;
     }
-    else if (eventSource == "choiceribbon")
+    else if (event_source == "exit")
     {
-        const std::string& selection =
-            choice_ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
+        ModalDialog::dismiss();
+        if (STKHost::existHost())
+        {
+            STKHost::get()->shutdown();
+        }
+        race_manager->exitRace();
+        race_manager->setAIKartOverride("");
 
-        if (selection == "exit")
+        if (NetworkConfig::get()->isNetworking())
         {
-            ModalDialog::dismiss();
-            if (STKHost::existHost())
-            {
-                STKHost::get()->shutdown();
-            }
-            race_manager->exitRace();
-            race_manager->setAIKartOverride("");
-
-            if (NetworkConfig::get()->isNetworking())
-            {
-                StateManager::get()->resetAndSetStack(
-                    NetworkConfig::get()->getResetScreens().data());
-                NetworkConfig::get()->unsetNetworking();
-            }
-            else
-            {
-                StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
-                if (race_manager->raceWasStartedFromOverworld())
-                {
-                    OverWorld::enterOverWorld();
-                }
-            }
-            return GUIEngine::EVENT_BLOCK;
+            StateManager::get()->resetAndSetStack(
+                NetworkConfig::get()->getResetScreens().data());
+            NetworkConfig::get()->unsetNetworking();
         }
-        else if (selection == "help")
+        else
         {
-            dismiss();
-            HelpScreen1::getInstance()->push();
-            return GUIEngine::EVENT_BLOCK;
+            StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
+            if (race_manager->raceWasStartedFromOverworld())
+            {
+                OverWorld::enterOverWorld();
+            }
         }
-        else if (selection == "options")
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "help")
+    {
+        dismiss();
+        HelpScreen1::getInstance()->push();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "options")
+    {
+        dismiss();
+        OptionsScreenGeneral::getInstance()->push();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "restart")
+    {
+        ModalDialog::dismiss();
+        World::getWorld()->scheduleUnpause();
+        race_manager->rerunRace();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "newrace")
+    {
+        ModalDialog::dismiss();
+        if (NetworkConfig::get()->isNetworking())
         {
-            dismiss();
-            OptionsScreenGeneral::getInstance()->push();
-            return GUIEngine::EVENT_BLOCK;
+            // back lobby
+            NetworkString back(PROTOCOL_LOBBY_ROOM);
+            back.setSynchronous(true);
+            back.addUInt8(LobbyProtocol::LE_CLIENT_BACK_LOBBY);
+            STKHost::get()->sendToServer(&back, true);
         }
-        else if (selection == "restart")
+        else
         {
-            ModalDialog::dismiss();
             World::getWorld()->scheduleUnpause();
-            race_manager->rerunRace();
-            return GUIEngine::EVENT_BLOCK;
+            race_manager->exitRace();
+            Screen* new_stack[] =
+                {
+                    MainMenuScreen::getInstance(),
+                    RaceSetupScreen::getInstance(),
+                    NULL
+                };
+            StateManager::get()->resetAndSetStack(new_stack);
         }
-        else if (selection == "newrace")
-        {
-            ModalDialog::dismiss();
-            if (NetworkConfig::get()->isNetworking())
-            {
-                // back lobby
-                NetworkString back(PROTOCOL_LOBBY_ROOM);
-                back.setSynchronous(true);
-                back.addUInt8(LobbyProtocol::LE_CLIENT_BACK_LOBBY);
-                STKHost::get()->sendToServer(&back, true);
-            }
-            else
-            {
-                World::getWorld()->scheduleUnpause();
-                race_manager->exitRace();
-                Screen* new_stack[] =
-                    {
-                        MainMenuScreen::getInstance(),
-                        RaceSetupScreen::getInstance(),
-                        NULL
-                    };
-                StateManager::get()->resetAndSetStack(new_stack);
-            }
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if (selection == "endrace")
-        {
-            ModalDialog::dismiss();
-            World::getWorld()->getRaceGUI()->removeReferee();
-            World::getWorld()->endRaceEarly();
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if (selection == "selectkart")
-        {
-            dynamic_cast<OverWorld*>(World::getWorld())->scheduleSelectKart();
-            ModalDialog::dismiss();
-            return GUIEngine::EVENT_BLOCK;
-        }
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "endrace")
+    {
+        ModalDialog::dismiss();
+        World::getWorld()->getRaceGUI()->removeReferee();
+        World::getWorld()->endRaceEarly();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "selectkart")
+    {
+        dynamic_cast<OverWorld*>(World::getWorld())->scheduleSelectKart();
+        ModalDialog::dismiss();
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent

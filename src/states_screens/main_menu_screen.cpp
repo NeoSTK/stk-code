@@ -27,7 +27,6 @@
 #include "guiengine/scalable_font.hpp"
 #include "guiengine/widgets/label_widget.hpp"
 #include "guiengine/widgets/list_widget.hpp"
-#include "guiengine/widgets/ribbon_widget.hpp"
 #include "input/device_manager.hpp"
 #include "input/input_manager.hpp"
 #include "input/keyboard_device.hpp"
@@ -80,37 +79,40 @@ void MainMenuScreen::loadedFromFile()
     LabelWidget* w = getWidget<LabelWidget>("info_addons");
     w->setScrollSpeed(GUIEngine::getFontHeight() / 2);
     
-    RibbonWidget* rw_top = getWidget<RibbonWidget>("menu_toprow");
-    assert(rw_top != NULL);
+    printf("Label0\n");
     
     if (track_manager->getTrack("overworld") == NULL ||
-        track_manager->getTrack("introcutscene") == NULL ||
-        track_manager->getTrack("introcutscene2") == NULL)
+    track_manager->getTrack("introcutscene") == NULL ||
+    track_manager->getTrack("introcutscene2") == NULL)
     {
-        rw_top->removeChildNamed("story");
+        getWidget<IconButtonWidget>("story")->setVisible(false);
     }
+    
+    printf("Label1\n");
 
 #if DEBUG_MENU_ITEM != 1
-    RibbonWidget* rw = getWidget<RibbonWidget>("menu_bottomrow");
-    rw->removeChildNamed("test_gpwin");
-    rw->removeChildNamed("test_gplose");
-    rw->removeChildNamed("test_unlocked");
-    rw->removeChildNamed("test_unlocked2");
-    rw->removeChildNamed("test_intro");
-    rw->removeChildNamed("test_outro");
+    getWidget<IconButtonWidget>("test_gpwin")->setVisible(false);
+    getWidget<IconButtonWidget>("test_gplose")->setVisible(false);
+    getWidget<IconButtonWidget>("test_unlocked")->setVisible(false);
+    getWidget<IconButtonWidget>("test_unlocked2")->setVisible(false);
+    getWidget<IconButtonWidget>("test_intro")->setVisible(false);
+    getWidget<IconButtonWidget>("test_outro")->setVisible(false);
 #endif
+    printf("Label2\n");
 }   // loadedFromFile
 
 // ----------------------------------------------------------------------------
 
 void MainMenuScreen::beforeAddingWidget()
 {
+    printf("Label3\n");
 #ifdef IOS_STK
     // iOS app doesn't like quit button in UI
     Widget* w = getWidget("quit");
     if (w)
         w->setVisible(false);
 #endif
+    printf("Label4\n");
 }
 
 // ----------------------------------------------------------------------------
@@ -157,14 +159,6 @@ void MainMenuScreen::init()
     w->update(0.01f);
 #endif
 
-    RibbonWidget* r = getWidget<RibbonWidget>("menu_bottomrow");
-    // FIXME: why do I need to do this manually
-    ((IconButtonWidget*)r->getChildren().get(0))->unfocused(PLAYER_ID_GAME_MASTER, NULL);
-    ((IconButtonWidget*)r->getChildren().get(1))->unfocused(PLAYER_ID_GAME_MASTER, NULL);
-    ((IconButtonWidget*)r->getChildren().get(2))->unfocused(PLAYER_ID_GAME_MASTER, NULL);
-
-    r = getWidget<RibbonWidget>("menu_toprow");
-    r->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
     DemoWorld::resetIdleTime();
 
 #if _IRR_MATERIAL_MAX_TEXTURES_ < 8
@@ -242,23 +236,14 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
                                    const int playerID)
 {
 #ifndef SERVER_ONLY
-    if(name=="user-id")
+    if(name == "user-id")
     {
         UserScreen::getInstance()->push();
         return;
     }
 
-    // most interesting stuff is in the ribbons, so start there
-    RibbonWidget* ribbon = dynamic_cast<RibbonWidget*>(widget);
-
-    if (ribbon == NULL) return; // what's that event??
-
-    // ---- A ribbon icon was clicked
-    std::string selection =
-        ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-
     /*
-    if (selection == "story")
+    if (name == "story")
     {
         StateManager::get()->enterGameState();
         race_manager->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
@@ -277,7 +262,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
     */
 
 #if DEBUG_MENU_ITEM
-    if (selection == "test_gpwin")
+    if (name == "test_gpwin")
     {
         StoryModeStatus* sms = PlayerManager::getCurrentPlayer()->getStoryModeStatus();
         sms->unlockFeature(const_cast<ChallengeStatus*>(sms->getChallengeStatus("gp1")),
@@ -299,7 +284,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
             };
         scene->setKarts(winners);
     }
-    else if (selection == "test_gplose")
+    else if (name == "test_gplose")
     {
         StateManager::get()->enterGameState();
         race_manager->setMinorMode(RaceManager::MINOR_MODE_CUTSCENE);
@@ -316,7 +301,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         //losers.push_back("tux");
         scene->setKarts(losers);
     }
-    else if (selection == "test_unlocked" || selection == "test_unlocked2")
+    else if (name == "test_unlocked" || name == "test_unlocked2")
     {
         StoryModeStatus* sms = PlayerManager::getCurrentPlayer()->getStoryModeStatus();
         sms->unlockFeature(const_cast<ChallengeStatus*>(sms->getChallengeStatus("gp1")),
@@ -338,13 +323,13 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
 
         scene->addTrophy(RaceManager::DIFFICULTY_EASY, false);
 
-        if (selection == "test_unlocked")
+        if (name == "test_unlocked")
         {
             scene->addUnlockedKart(kart_properties_manager->getKart("tux"));
             scene->addUnlockedTrack(track_manager->getTrack("lighthouse"));
             scene->push();
         }
-        else if (selection == "test_unlocked2")
+        else if (name == "test_unlocked2")
         {
             std::vector<video::ITexture*> textures;
             textures.push_back(irr_driver->getTexture(
@@ -365,7 +350,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
             scene->push();
         }
     }
-    else if (selection == "test_intro")
+    else if (name == "test_intro")
     {
         CutsceneWorld::setUseDuration(true);
         StateManager::get()->enterGameState();
@@ -382,7 +367,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         //race_manager->startSingleRace("introcutscene2", 999, false);
         return;
     }
-    else if (selection == "test_outro")
+    else if (name == "test_outro")
     {
         CutsceneWorld::setUseDuration(true);
         StateManager::get()->enterGameState();
@@ -398,7 +383,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
     }
     else
 #endif
-    if (selection == "new")
+    if (name == "new")
     {
         NetworkConfig::get()->unsetNetworking();
         KartSelectionScreen* s = OfflineKartSelectionScreen::getInstance();
@@ -406,7 +391,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         s->setFromOverworld(false);
         s->push();
     }
-    else if (selection == "multiplayer")
+    else if (name == "multiplayer")
     {
         KartSelectionScreen* s = OfflineKartSelectionScreen::getInstance();
         NetworkConfig::get()->unsetNetworking();
@@ -414,11 +399,11 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         s->setFromOverworld(false);
         s->push();
     }
-    else if (selection == "options")
+    else if (name == "options")
     {
         OptionsScreenGeneral::getInstance()->push();
     }
-    else if (selection == "quit")
+    else if (name == "quit")
     {
 #ifdef ANDROID
         GUIEngine::EventHandler::get()->setAcceptEvents(false);
@@ -428,15 +413,15 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
 #endif
         return;
     }
-    else if (selection == "about")
+    else if (name == "about")
     {
         CreditsScreen::getInstance()->push();
     }
-    else if (selection == "help")
+    else if (name == "help")
     {
         HelpScreen1::getInstance()->push();
     }
-    else if (selection == "startTutorial")
+    else if (name == "startTutorial")
     {
         race_manager->setNumPlayers(1);
         race_manager->setMajorMode (RaceManager::MAJOR_MODE_SINGLE);
@@ -471,7 +456,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         race_manager->setupPlayerKartInfo();
         race_manager->startNew(false);
     }
-    else if (selection == "story")
+    else if (name == "story")
     {
         NetworkConfig::get()->unsetNetworking();
         PlayerProfile *player = PlayerManager::getCurrentPlayer();
@@ -505,7 +490,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
             OverWorld::enterOverWorld();
         }
     }
-    else if (selection == "online")
+    else if (name == "online")
     {
         if(UserConfigParams::m_internet_status!=RequestManager::IPERM_ALLOWED)
         {
@@ -516,7 +501,7 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         }
         OnlineScreen::getInstance()->push();
     }
-    else if (selection == "addons")
+    else if (name == "addons")
     {
         // Don't go to addons if there is no internet, unless some addons are
         // already installed (so that you can delete addons without being online).
@@ -541,11 +526,11 @@ void MainMenuScreen::eventCallback(Widget* widget, const std::string& name,
         }
         AddonsScreen::getInstance()->push();
     }
-    else if (selection == "gpEditor")
+    else if (name == "gpEditor")
     {
         GrandPrixEditorScreen::getInstance()->push();
     }
-    else if (selection == "achievements")
+    else if (name == "achievements")
     {
         OnlineProfileAchievements::getInstance()->push();
     }

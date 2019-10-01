@@ -57,13 +57,10 @@ ServerInfoDialog::ServerInfoDialog(std::shared_ptr<Server> server)
     loadFromFile("online/server_info_dialog.stkgui");
     getWidget<LabelWidget>("title")->setText(server->getName(), true);
 
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_join_widget = getWidget<IconButtonWidget>("join");
     assert(m_join_widget != NULL);
     m_cancel_widget = getWidget<IconButtonWidget>("cancel");
     assert(m_cancel_widget != NULL);
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 
     if (m_server->isPasswordProtected())
     {
@@ -174,22 +171,17 @@ void ServerInfoDialog::requestJoin()
 
 // -----------------------------------------------------------------------------
 GUIEngine::EventPropagation
-                 ServerInfoDialog::processEvent(const std::string& eventSource)
+                 ServerInfoDialog::processEvent(const std::string& event_source)
 {
-    if (eventSource == m_options_widget->m_properties[PROP_ID])
+    if (event_source == m_cancel_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-                 m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_cancel_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_join_widget->m_properties[PROP_ID])
-        {
-            m_join_server = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_join_widget->m_properties[PROP_ID])
+    {
+        m_join_server = true;
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent
@@ -201,9 +193,6 @@ void ServerInfoDialog::onEnterPressedInternal()
 {
     // If enter was pressed while none of the buttons was focused interpret
     // as join event
-    const int playerID = PLAYER_ID_GAME_MASTER;
-    if (GUIEngine::isFocusedForPlayer(m_options_widget, playerID))
-        return;
     m_join_server = true;
 }   // onEnterPressedInternal
 

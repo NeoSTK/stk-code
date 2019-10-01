@@ -102,7 +102,7 @@ public:
     virtual void onUpdate(float dt) OVERRIDE;
     virtual void load() OVERRIDE;
 
-    GUIEngine::EventPropagation processEvent(const std::string& eventSource) OVERRIDE;
+    GUIEngine::EventPropagation processEvent(const std::string& event_source) OVERRIDE;
 
     virtual void loadedFromFile() OVERRIDE;
 

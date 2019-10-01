@@ -52,13 +52,9 @@ VoteDialog::VoteDialog(const std::string & addon_id)
 
     m_rating_widget->setRating(0);
     m_rating_widget->allowVoting();
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
 
     m_cancel_widget = getWidget<IconButtonWidget>("cancel");
     assert(m_cancel_widget != NULL);
-
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 
     m_fetch_vote_request = new XMLRequest();
     PlayerManager::setUserDetails(m_fetch_vote_request, "get-addon-vote");
@@ -136,24 +132,16 @@ void VoteDialog::sendVote()
  */
 GUIEngine::EventPropagation VoteDialog::processEvent(const std::string& event)
 {
-
     if (event == m_rating_widget->m_properties[PROP_ID])
     {
         sendVote();
         return GUIEngine::EVENT_BLOCK;
     }
-
-    if (event == m_options_widget->m_properties[PROP_ID])
+    if (event == m_cancel_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-            m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
+        m_self_destroy = true;
 
-        if (selection == m_cancel_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
-
-            return GUIEngine::EVENT_BLOCK;
-        }
+        return GUIEngine::EVENT_BLOCK;
     }
 
     return GUIEngine::EVENT_LET;

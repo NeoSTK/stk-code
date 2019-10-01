@@ -53,7 +53,7 @@ public:
     RacePausedDialog(const float percentWidth, const float percentHeight);
     virtual ~RacePausedDialog();
     virtual void onEnterPressedInternal() OVERRIDE;
-    GUIEngine::EventPropagation processEvent(const std::string& eventSource)
+    GUIEngine::EventPropagation processEvent(const std::string& event_source)
         OVERRIDE;
     virtual void beforeAddingWidgets() OVERRIDE;
     // ------------------------------------------------------------------------

@@ -325,11 +325,9 @@ core::stringw AchievementProgressDialog::niceGoalName(std::string internal_name)
 // -----------------------------------------------------------------------------
 void AchievementProgressDialog::beforeAddingWidgets()
 {
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_ok_widget = getWidget<IconButtonWidget>("ok");
     assert(m_ok_widget != NULL);
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
+    m_ok_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 }   // beforeAddingWidgets
 
 // -----------------------------------------------------------------------------
@@ -361,16 +359,10 @@ void AchievementProgressDialog::onUpdate(float dt)
 GUIEngine::EventPropagation
     AchievementProgressDialog::processEvent(const std::string& source)
 {
-
-    if (source == m_options_widget->m_properties[PROP_ID])
+    if (source == m_ok_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-            m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_ok_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent

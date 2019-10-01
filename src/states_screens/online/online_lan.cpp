@@ -56,10 +56,6 @@ void OnlineLanScreen::beforeAddingWidget()
 
 void OnlineLanScreen::init()
 {
-    RibbonWidget* ribbon = getWidget<RibbonWidget>("lan");
-    assert(ribbon != NULL);
-    ribbon->select("find_lan_server", PLAYER_ID_GAME_MASTER);
-    ribbon->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 }   // init
 
 // -----------------------------------------------------------------------------
@@ -71,25 +67,19 @@ void OnlineLanScreen::eventCallback(Widget* widget, const std::string& name, con
         StateManager::get()->escapePressed();
         return;
     }
-    if (name == "lan")
+    if (name == "find_lan_server")
     {
-        RibbonWidget* ribbon = dynamic_cast<RibbonWidget*>(widget);
-        std::string selection = ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == "find_lan_server")
-        {
-            NetworkConfig::get()->setIsLAN();
-            NetworkConfig::get()->setIsServer(false);
-            ServerSelection::getInstance()->push();
-        }
-#ifndef IOS_STK
-        else if (selection == "create_lan_server")
-        {
-            NetworkConfig::get()->setIsLAN();
-            CreateServerScreen::getInstance()->push();
-        }
-#endif
+        NetworkConfig::get()->setIsLAN();
+        NetworkConfig::get()->setIsServer(false);
+        ServerSelection::getInstance()->push();
     }
-    
+#ifndef IOS_STK
+    else if (name == "create_lan_server")
+    {
+        NetworkConfig::get()->setIsLAN();
+        CreateServerScreen::getInstance()->push();
+    }
+#endif
 }   // eventCallback
 
 // ----------------------------------------------------------------------------

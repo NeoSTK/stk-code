@@ -407,52 +407,47 @@ void BaseUserScreen::eventCallback(Widget* widget,
         // Open password reset page
         Online::LinkHelper::openURL(stk_config->m_password_reset_url);
     }
-    else if (name == "options")
+    else if (name == "ok")
     {
-        const std::string &button =
-                             m_options_widget->getSelectionIDString(player_id);
-        if (button == "ok")
-        {
-            login();
-        }   // button==ok
-        else if (button == "new_user")
-        {
-            RegisterScreen::getInstance()->push();
-            RegisterScreen::getInstance()->setParent(this);
-            // Make sure the new user will have an empty online name field
-            // that can also be edited.
-            m_username_tb->setText("");
-            m_username_tb->setActive(true);
-        }
-        else if (button == "cancel")
-        {
-            // EscapePressed will pop this screen.
-            StateManager::get()->escapePressed();
-        }
-        else if (button == "recover")
-        {
-            new RecoveryDialog();
-        }
-        else if (button == "rename")
-        {
-            PlayerProfile *cp = getSelectedPlayer();
-            RegisterScreen::getInstance()->setRename(cp);
-            RegisterScreen::getInstance()->push();
-            RegisterScreen::getInstance()->setParent(this);
-            m_new_registered_data = false;
-            m_auto_login          = false;
-            // Init will automatically be called, which
-            // refreshes the player list
-        }
-        else if (button == "default_kart_color")
-        {
-            new KartColorSliderDialog(getSelectedPlayer());
-        }
-        else if (button == "delete")
-        {
-            deletePlayer();
-        }
-    }   // options
+        login();
+    }   // button==ok
+    else if (name == "new_user")
+    {
+        RegisterScreen::getInstance()->push();
+        RegisterScreen::getInstance()->setParent(this);
+        // Make sure the new user will have an empty online name field
+        // that can also be edited.
+        m_username_tb->setText("");
+        m_username_tb->setActive(true);
+    }
+    else if (name == "cancel")
+    {
+        // EscapePressed will pop this screen.
+        StateManager::get()->escapePressed();
+    }
+    else if (name == "recover")
+    {
+        new RecoveryDialog();
+    }
+    else if (name == "rename")
+    {
+        PlayerProfile *cp = getSelectedPlayer();
+        RegisterScreen::getInstance()->setRename(cp);
+        RegisterScreen::getInstance()->push();
+        RegisterScreen::getInstance()->setParent(this);
+        m_new_registered_data = false;
+        m_auto_login          = false;
+        // Init will automatically be called, which
+        // refreshes the player list
+    }
+    else if (name == "default_kart_color")
+    {
+        new KartColorSliderDialog(getSelectedPlayer());
+    }
+    else if (name == "delete")
+    {
+        deletePlayer();
+    }
     else if (name == "back")
     {
         StateManager::get()->escapePressed();

@@ -15,19 +15,19 @@
 
         <spacer width="100%" height="2%" />
 
-        <buttonbar proportion="1" id="menu" height="135" width="100%" align="center">
-            <icon-button id="up" width="128" height="128" icon="gui/icons/up.png"
+        <div proportion="1" width="100%" align="center" layout="horizontal-row">
+            <icon-button id="up" height="100%" proportion="1" icon="gui/icons/up.png"
                 I18N="Menu item" text="Move up" />
-            <icon-button id="down" width="128" height="128" icon="gui/icons/down.png"
+            <icon-button id="down" height="100%" proportion="1" icon="gui/icons/down.png"
                 I18N="Menu item" text="Move down" />
-            <icon-button id="add" width="128" height="128" icon="gui/icons/blue_plus.png"
+            <icon-button id="add" height="100%" proportion="1" icon="gui/icons/blue_plus.png"
                 I18N="Menu item" text="Add" />
-            <icon-button id="edit" width="128" height="128" icon="gui/icons/edit.png"
+            <icon-button id="edit" height="100%" proportion="1" icon="gui/icons/edit.png"
                 I18N="Menu item" text="Edit" />
-            <icon-button id="remove" width="128" height="128" icon="gui/icons/remove.png"
+            <icon-button id="remove" height="100%" proportion="1" icon="gui/icons/remove.png"
                 I18N="Menu item" text="Remove" />
-            <icon-button id="save" width="128" height="128" icon="gui/icons/save.png"
+            <icon-button id="save" height="100%" proportion="1" icon="gui/icons/save.png"
                 I18N="Menu item" text="Save" />
-        </buttonbar>
+        </div>
     </div>
 </stkgui>

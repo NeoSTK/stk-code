@@ -73,57 +73,50 @@ void EditGPScreen::eventCallback(GUIEngine::Widget* widget,
         m_action = "edit";
         edit();
     }
-    else if (name == "menu")
+    if (name == "up")
     {
-        RibbonWidget* menu = getWidget<RibbonWidget>("menu");
-        assert(menu != NULL);
-        m_action = menu->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-
-        if (m_action == "up")
+        if (canMoveUp())
         {
-            if (canMoveUp())
-            {
-                m_gp->moveUp(m_selected--);
-                loadList(m_selected);
-                setModified(true);
-            }
+            m_gp->moveUp(m_selected--);
+            loadList(m_selected);
+            setModified(true);
         }
-        else if (m_action == "down")
+    }
+    else if (name == "down")
+    {
+        if (canMoveDown())
         {
-            if (canMoveDown())
-            {
-                m_gp->moveDown(m_selected++);
-                loadList(m_selected);
-                setModified(true);
-            }
+            m_gp->moveDown(m_selected++);
+            loadList(m_selected);
+            setModified(true);
         }
-        else if (m_action == "edit")
+    }
+    else if (name == "edit")
+    {
+        edit();
+    }
+    else if (name == "add")
+    {
+        EditTrackScreen* edit = EditTrackScreen::getInstance();
+        assert(edit != NULL);
+        //By default, 3 laps and no reversing
+        edit->setSelection(NULL, 3, false);
+        edit->push();
+    }
+    else if (name == "remove")
+    {
+        if (m_selected >= 0 && m_selected < m_list->getItemCount())
         {
-            edit();
+            new MessageDialog(
+                _("Are you sure you want to remove '%s'?",
+                    m_gp->getTrackName(m_selected).c_str()),
+                MessageDialog::MESSAGE_DIALOG_CONFIRM,
+                this, false);
         }
-        else if (m_action == "add")
-        {
-            EditTrackScreen* edit = EditTrackScreen::getInstance();
-            assert(edit != NULL);
-            //By default, 3 laps and no reversing
-            edit->setSelection(NULL, 3, false);
-            edit->push();
-        }
-        else if (m_action == "remove")
-        {
-            if (m_selected >= 0 && m_selected < m_list->getItemCount())
-            {
-                new MessageDialog(
-                    _("Are you sure you want to remove '%s'?",
-                        m_gp->getTrackName(m_selected).c_str()),
-                    MessageDialog::MESSAGE_DIALOG_CONFIRM,
-                    this, false);
-            }
-        }
-        else if (m_action == "save")
-        {
-            save();
-        }
+    }
+    else if (name == "save")
+    {
+        save();
     }
     else if (name == "back")
     {

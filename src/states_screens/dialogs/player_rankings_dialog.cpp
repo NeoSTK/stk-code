@@ -58,13 +58,10 @@ PlayerRankingsDialog::PlayerRankingsDialog(uint32_t online_id,
 // -----------------------------------------------------------------------------
 void PlayerRankingsDialog::beforeAddingWidgets()
 {
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_ok_widget = getWidget<IconButtonWidget>("ok");
     assert(m_ok_widget != NULL);
     m_refresh_widget = getWidget<IconButtonWidget>("refresh");
     assert(m_refresh_widget != NULL);
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
 
     m_ranking_info = getWidget<LabelWidget>("cur-rank");
     assert(m_ranking_info != NULL);
@@ -153,30 +150,24 @@ void PlayerRankingsDialog::onUpdate(float dt)
 GUIEngine::EventPropagation
     PlayerRankingsDialog::processEvent(const std::string& source)
 {
-
-    if (source == m_options_widget->m_properties[PROP_ID])
+    if (source == m_ok_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-            m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_ok_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (source == m_refresh_widget->m_properties[PROP_ID])
+    {
+        static uint64_t timer = StkTime::getMonoTimeMs();
+        // 1 minute per refresh
+        if (StkTime::getMonoTimeMs() < timer + 60000)
             return GUIEngine::EVENT_BLOCK;
-        }
-        else if (selection == m_refresh_widget->m_properties[PROP_ID])
-        {
-            static uint64_t timer = StkTime::getMonoTimeMs();
-            // 1 minute per refresh
-            if (StkTime::getMonoTimeMs() < timer + 60000)
-                return GUIEngine::EVENT_BLOCK;
 
-            timer = StkTime::getMonoTimeMs();
-            *m_fetched_ranking = false;
-            updatePlayerRanking(m_name, m_online_id, m_ranking_info,
-                m_fetched_ranking);
-            updateTopTenList();
-            return GUIEngine::EVENT_BLOCK;
-        }
+        timer = StkTime::getMonoTimeMs();
+        *m_fetched_ranking = false;
+        updatePlayerRanking(m_name, m_online_id, m_ranking_info,
+            m_fetched_ranking);
+        updateTopTenList();
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent

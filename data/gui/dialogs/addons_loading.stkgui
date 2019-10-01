@@ -26,17 +26,17 @@
         <spacer proportion="1" />
         
         <div width="80%" proportion="4" align="center">
-            <buttonbar id="actions" x="0" y="0" height="100%" width="100%" align="center">
-                <icon-button id="install" width="128" height="128"
+            <div x="0" y="0" height="100%" width="100%" align="center" layout="horizontal-row">
+                <icon-button id="install" height="100%" proportion="1"
                              icon="gui/icons/package-update.png"
                              I18N="Add-on screen action"  text="Install" />
-                <icon-button id="uninstall" width="128" height="128"
+                <icon-button id="uninstall" height="100%" proportion="1"
                              icon="gui/icons/package-uninstall.png"
                              I18N="Add-on screen action" text="Uninstall" />
-                <icon-button id="back" width="128" height="128"
+                <icon-button id="back" height="100%" proportion="1"
                              icon="gui/icons/back.png"
                              I18N="Add-on screen action" text="Back" />
-            </buttonbar>
+            </div>
             <progressbar id="progress" x="0" y="20%" width="100%" height="2f" />
         </div>
     </div>

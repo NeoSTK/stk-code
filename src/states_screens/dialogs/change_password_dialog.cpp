@@ -62,8 +62,6 @@ ChangePasswordDialog::ChangePasswordDialog() : ModalDialog(0.8f, 0.7f)
     m_info_widget = getWidget<LabelWidget>("info");
     assert(m_info_widget != NULL);
 
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_submit_widget = getWidget<IconButtonWidget>("submit");
     assert(m_submit_widget != NULL);
     m_cancel_widget = getWidget<IconButtonWidget>("cancel");
@@ -149,7 +147,8 @@ void ChangePasswordDialog::submit()
     }
     else
     {
-        m_options_widget->setActive(false);
+        m_submit_widget->setActive(false);
+        m_cancel_widget->setActive(false);
         m_info_widget->setDefaultColor();
 
         // We don't need to use password 2 anymore, it was already confirmed
@@ -160,25 +159,19 @@ void ChangePasswordDialog::submit()
 
 // ----------------------------------------------------------------------------
 GUIEngine::EventPropagation
-             ChangePasswordDialog::processEvent(const std::string& eventSource)
+             ChangePasswordDialog::processEvent(const std::string& event_source)
 {
-    if (eventSource == m_options_widget->m_properties[PROP_ID])
+    if (event_source == m_cancel_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-                 m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
+        m_self_destroy = true;
 
-        if (selection == m_cancel_widget->m_properties[PROP_ID])
-        {
-            m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == m_submit_widget->m_properties[PROP_ID])
+    {
+        submit();
 
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == m_submit_widget->m_properties[PROP_ID])
-        {
-            submit();
-
-            return GUIEngine::EVENT_BLOCK;
-        }
+        return GUIEngine::EVENT_BLOCK;
     }
 
     return GUIEngine::EVENT_LET;
@@ -188,7 +181,7 @@ GUIEngine::EventPropagation
 void ChangePasswordDialog::onEnterPressedInternal()
 {
     const int playerID = PLAYER_ID_GAME_MASTER;
-    if (GUIEngine::isFocusedForPlayer(m_options_widget, playerID))
+    if (GUIEngine::isFocusedForPlayer(m_cancel_widget, playerID))
         return;
 
     if (m_submit_widget->isActivated())
@@ -209,7 +202,8 @@ void ChangePasswordDialog::success()
 {
     m_info_widget->setDefaultColor();
     m_info_widget->setText(_("Password successfully changed."), false);
-    m_options_widget->setActive(true);
+    m_submit_widget->setActive(true);
+    m_cancel_widget->setActive(true);
     m_current_password_widget->setText("");
     m_new_password1_widget->setText("");
     m_new_password2_widget->setText("");
@@ -221,7 +215,8 @@ void ChangePasswordDialog::error(const irr::core::stringw & error)
     SFXManager::get()->quickSound("anvil");
     m_info_widget->setErrorColor();
     m_info_widget->setText(error, false);
-    m_options_widget->setActive(true);
+    m_submit_widget->setActive(true);
+    m_cancel_widget->setActive(true);
     m_current_password_widget->setText("");
     m_new_password1_widget->setText("");
     m_new_password2_widget->setText("");
@@ -230,7 +225,7 @@ void ChangePasswordDialog::error(const irr::core::stringw & error)
 // -----------------------------------------------------------------------------
 void ChangePasswordDialog::onUpdate(float dt)
 {
-    if(!m_options_widget->isActivated())
+    if(!m_submit_widget->isActivated() || !m_cancel_widget->isActivated())
     {
         m_info_widget->setText(
             StringUtils::loadingDots(_("Validating info")),

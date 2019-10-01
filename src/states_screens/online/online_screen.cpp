@@ -89,9 +89,6 @@ void OnlineScreen::init()
     m_user_id = getWidget<ButtonWidget>("user-id");
     assert(m_user_id);
 
-    RibbonWidget* r = getWidget<RibbonWidget>("menu_toprow");
-    r->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
-
     // Pre-add a default single player profile in network
     if (!m_enable_splitscreen->getState() &&
         NetworkConfig::get()->getNetworkPlayers().empty())
@@ -180,19 +177,11 @@ void OnlineScreen::eventCallback(Widget* widget, const std::string& name,
         }
         return;
     }
-
-    RibbonWidget* ribbon = dynamic_cast<RibbonWidget*>(widget);
-    if (ribbon == NULL) return; // what's that event??
-
-    // ---- A ribbon icon was clicked
-    std::string selection =
-        ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-
-    if (selection == "lan")
+    else if (name == "lan")
     {
         OnlineLanScreen::getInstance()->push();
     }
-    else if (selection == "wan")
+    else if (name == "wan")
     {
         if (PlayerManager::getCurrentOnlineState() != PlayerProfile::OS_SIGNED_IN)
         {
@@ -203,7 +192,7 @@ void OnlineScreen::eventCallback(Widget* widget, const std::string& name,
         else
             OnlineProfileServers::getInstance()->push();
     }
-    else if (selection == "online")
+    else if (name == "online")
     {
         if (UserConfigParams::m_internet_status != RequestManager::IPERM_ALLOWED)
         {
@@ -224,7 +213,7 @@ void OnlineScreen::eventCallback(Widget* widget, const std::string& name,
             UserScreen::getInstance()->push();
         }
     }
-    else if (selection == "enter-address")
+    else if (name == "enter-address")
     {
         m_entered_server = nullptr;
         if (NetworkConfig::get()->isAddingNetworkPlayers())

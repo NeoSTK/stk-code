@@ -46,7 +46,6 @@ private:
     GUIEngine::LabelWidget * m_info_widget;
 
     GUIEngine::RibbonWidget * m_game_mode_widget;
-    GUIEngine::RibbonWidget * m_options_widget;
     GUIEngine::IconButtonWidget * m_create_widget;
     GUIEngine::IconButtonWidget * m_cancel_widget;
 

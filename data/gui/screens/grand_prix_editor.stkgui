@@ -29,18 +29,18 @@
 
         <spacer height="20" />
 
-        <buttonbar proportion="3" id="menu" height="135" width="100%" align="center">
-            <icon-button id="new" width="128" height="128" icon="gui/icons/gp_new.png"
+        <div proportion="3" width="100%" align="center" layout="horizontal-row">
+            <icon-button id="new" height="100%" proportion="1" icon="gui/icons/gp_new.png"
                 I18N="Menu item" text="New" />
-            <icon-button id="copy" width="128" height="128" icon="gui/icons/gp_copy.png"
+            <icon-button id="copy" height="100%" proportion="1" icon="gui/icons/gp_copy.png"
                 I18N="Menu item" text="Copy" />
-            <icon-button id="edit" width="128" height="128" icon="gui/icons/edit.png"
+            <icon-button id="edit" height="100%" proportion="1" icon="gui/icons/edit.png"
                 I18N="Menu item" text="Edit" />
-            <icon-button id="remove" width="128" height="128" icon="gui/icons/gp_remove.png"
+            <icon-button id="remove" height="100%" proportion="1" icon="gui/icons/gp_remove.png"
                 I18N="Menu item" text="Remove" />
-            <icon-button id="rename" width="128" height="128" icon="gui/icons/rename.png"
+            <icon-button id="rename" height="100%" proportion="1" icon="gui/icons/rename.png"
                 I18N="Menu item" text="Rename" />
-        </buttonbar>
+        </div>
 
     </div>
 </stkgui>

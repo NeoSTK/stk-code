@@ -6,11 +6,11 @@
                 I18N="In the registration dialog" />
       <spacer height="15" width="10"/>
       <tabs id="mode_tabs" height="2f" x="2%" width="98%" align="center">
-        <icon-button id="tab_new_online" width="128" height="128" icon="gui/icons/main_network.png"
+        <icon-button id="tab_new_online" height="100%" proportion="1" icon="gui/icons/main_network.png"
                      I18N="Section in the register screen" text="New Online Account"/>
-        <icon-button id="tab_existing_online" width="128" height="128" icon="gui/icons/main_network.png"
+        <icon-button id="tab_existing_online" height="100%" proportion="1" icon="gui/icons/main_network.png"
                      I18N="Section in the register screen" text="Existing Online Account"/>
-        <icon-button id="tab_offline" width="128" height="128" icon="gui/icons/options_players.png"
+        <icon-button id="tab_offline" height="100%" proportion="1" icon="gui/icons/options_players.png"
                      I18N="Section in the register screen" text="Offline Account"/>
       </tabs>
 
@@ -60,12 +60,12 @@
                        text="You can play without creating an online account by selecting an offline account. Though then you can not connect to friends, vote for addons etc. Please read our privacy statement at http://privacy.supertuxkart.net"/>
             </div>
 
-            <buttonbar id="options" width="40%" height="15%" align="center">
+            <div width="40%" height="15%" align="center" layout="horizontal-row">
                 <icon-button id="next" width="50%" height="90%" icon="gui/icons/green_check.png"
                     I18N="In the registration dialog" text="OK" label_location="none"/>
                 <icon-button id="cancel" width="50%" height="90%" icon="gui/icons/main_quit.png"
                     I18N="In the registration dialog"  text="Cancel" label_location="none"/>
-            </buttonbar>
+            </div>
         </box>
     </div>
 

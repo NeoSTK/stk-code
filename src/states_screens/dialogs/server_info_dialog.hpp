@@ -46,8 +46,6 @@ private:
 
     const std::shared_ptr<Server> m_server;
 
-    GUIEngine::RibbonWidget *m_options_widget;
-
     /** The join button. */
     GUIEngine::IconButtonWidget *m_join_widget;
 
@@ -62,7 +60,7 @@ public:
     ~ServerInfoDialog();
 
     void onEnterPressedInternal();
-    GUIEngine::EventPropagation processEvent(const std::string& eventSource);
+    GUIEngine::EventPropagation processEvent(const std::string& event_source);
 
     virtual bool onEscapePressed();
     virtual void onUpdate(float dt);

@@ -72,8 +72,6 @@ void CreateServerScreen::loadedFromFile()
     m_more_options_spinner = getWidget<SpinnerWidget>("more-options-spinner");
     assert(m_more_options_spinner != NULL);
 
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_game_mode_widget = getWidget<RibbonWidget>("gamemode");
     assert(m_game_mode_widget != NULL);
     m_create_widget = getWidget<IconButtonWidget>("create");
@@ -120,20 +118,15 @@ void CreateServerScreen::init()
 void CreateServerScreen::eventCallback(Widget* widget, const std::string& name,
                                        const int playerID)
 {
-    if (name == m_options_widget->m_properties[PROP_ID])
+    if (name == m_cancel_widget->m_properties[PROP_ID])
     {
-        const std::string& selection =
-            m_options_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_cancel_widget->m_properties[PROP_ID])
-        {
-            NetworkConfig::get()->unsetNetworking();
-            StateManager::get()->escapePressed();
-        }
-        else if (selection == m_create_widget->m_properties[PROP_ID])
-        {
-            createServer();
-        }   // is create_widget
+        NetworkConfig::get()->unsetNetworking();
+        StateManager::get()->escapePressed();
     }
+    else if (name == m_create_widget->m_properties[PROP_ID])
+    {
+        createServer();
+    }   // is create_widget
     else if (name == m_game_mode_widget->m_properties[PROP_ID])
     {
         const int selection =

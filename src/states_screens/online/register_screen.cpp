@@ -57,8 +57,6 @@ void RegisterScreen::init()
     assert(m_info_widget);
     m_info_widget->setDefaultColor();
     m_info_widget->setText(L"", false);
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget);
     m_password_widget = getWidget<TextBoxWidget>("password");
     assert(m_password_widget);
 
@@ -441,21 +439,16 @@ void RegisterScreen::eventCallback(Widget* widget, const std::string& name,
 
         makeEntryFieldsVisible();
     }
-    else if (name=="options")
+    if(name == "next")
     {
-        const std::string button = m_options_widget
-                                 ->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if(button=="next")
-        {
-            doRegister();
-        }
-        else if(button=="cancel")
-        {
-            // We poop this menu, onEscapePress will handle the special case
-            // of e.g. a fresh start of stk that is aborted.
-            StateManager::get()->popMenu();
-            onEscapePressed();
-        }
+        doRegister();
+    }
+    else if(name == "cancel")
+    {
+        // We poop this menu, onEscapePress will handle the special case
+        // of e.g. a fresh start of stk that is aborted.
+        StateManager::get()->popMenu();
+        onEscapePressed();
     }
     else if (name == "password_reset")
     {

@@ -56,9 +56,6 @@ private:
     /** Pointer to the rating widget of this dialog */
     GUIEngine::RatingBarWidget * m_rating_widget;
 
-    /** Pointer to the options widget, which contains the canel button. */
-    GUIEngine::RibbonWidget * m_options_widget;
-
     /** Pointer to the cancel button. */
     GUIEngine::IconButtonWidget * m_cancel_widget;
 

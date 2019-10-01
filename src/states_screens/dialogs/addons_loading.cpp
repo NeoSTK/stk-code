@@ -212,47 +212,36 @@ bool AddonsLoading::onEscapePressed()
 GUIEngine::EventPropagation AddonsLoading::processEvent(const std::string& event_source)
 {
 #ifndef SERVER_ONLY
-    GUIEngine::RibbonWidget* actions_ribbon =
-            getWidget<GUIEngine::RibbonWidget>("actions");
-
-    if (event_source == "actions")
+    if(event_source == "back")
     {
-        const std::string& selection =
-                actions_ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        
-        if(selection == "back")
+        stopDownload();
+        dismiss();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == "install")
+    {
+        // Only display the progress bar etc. if we are
+        // not uninstalling an addon.
+        if(!m_addon.isInstalled() || m_addon.needsUpdate())
         {
-            stopDownload();
-            dismiss();
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == "install")
-        {
-            // Only display the progress bar etc. if we are
-            // not uninstalling an addon.
-            if(!m_addon.isInstalled() || m_addon.needsUpdate())
-            {
-                m_progress->setValue(0);
-                m_progress->setVisible(true);
-                // Change the 'back' button into a 'cancel' button.
-                m_back_button->setLabel(_("Cancel"));
+            m_progress->setValue(0);
+            m_progress->setVisible(true);
+            // Change the 'back' button into a 'cancel' button.
+            m_back_button->setLabel(_("Cancel"));
 
-                actions_ribbon->setVisible(false);
-
-                startDownload();
-            }
-            return GUIEngine::EVENT_BLOCK;
+            startDownload();
         }
-        else if (selection == "uninstall")
-        {
-            doUninstall();
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if (selection == "vote")
-        {
-            voteClicked();
-            return GUIEngine::EVENT_BLOCK;
-        }
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "uninstall")
+    {
+        doUninstall();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "vote")
+    {
+        voteClicked();
+        return GUIEngine::EVENT_BLOCK;
     }
     else if (event_source == "rating")
     {

@@ -63,21 +63,16 @@ RegistrationDialog::~RegistrationDialog()
  */
 EventPropagation RegistrationDialog::processEvent(const std::string& event_source)
 {
-    if (event_source == "options")
+    if(event_source == "accept")
     {
-        RibbonWidget *rib = getWidget<RibbonWidget>("options");
-        std::string s = rib->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if(s=="accept")
-        {
-            GUIEngine::Screen *s = GUIEngine::getCurrentScreen();
-            RegisterScreen *r = dynamic_cast<RegisterScreen*>(s);
-            assert(r);
-            r->acceptTerms();
-        }
-
-        // If it's not accept, it's cancel - anyway, close dialog
-        ModalDialog::dismiss();
-        return EVENT_BLOCK;
+        GUIEngine::Screen *s = GUIEngine::getCurrentScreen();
+        RegisterScreen *r = dynamic_cast<RegisterScreen*>(s);
+        assert(r);
+        r->acceptTerms();
+        return EVENT_LET;
     }
-    return EVENT_LET;
+
+    // If it's not accept, it's cancel - anyway, close dialog
+    ModalDialog::dismiss();
+    return EVENT_BLOCK;
 }   // processEvent

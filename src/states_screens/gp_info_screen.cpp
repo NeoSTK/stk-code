@@ -139,10 +139,8 @@ void GPInfoScreen::beforeAddingWidget()
         bool continue_visible = saved_gp && saved_gp->getNextTrack() > 0 &&
                                             saved_gp->getNextTrack() < tracks;
 
-        RibbonWidget* ribbonButtons = getWidget<RibbonWidget>("buttons");
-        int id_continue_button = ribbonButtons->findItemNamed("continue");
-        ribbonButtons->setItemVisible(id_continue_button, continue_visible);
-        ribbonButtons->setLabel(id_continue_button, _("Continue saved GP"));
+        IconButtonWidget* continue_button = getWidget<IconButtonWidget>("continue");
+        continue_button->setLabel(_("Continue saved GP"));
     }
     else
     {
@@ -298,41 +296,35 @@ void GPInfoScreen::addScreenshot()
 void GPInfoScreen::eventCallback(Widget *, const std::string &name,
                                  const int player_id)
 {
-    if(name=="buttons")
+    // The continue button becomes a 'reload' button in random GP:
+    if(name == "continue" && m_gp.isRandomGP())
     {
-        const std::string &button = getWidget<RibbonWidget>("buttons")
-                                  ->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-
-        // The continue button becomes a 'reload' button in random GP:
-        if(button=="continue" && m_gp.isRandomGP())
-        {
-            // Create a new GP:
-            m_gp.createRandomGP(m_num_tracks_spinner->getValue(),
-                                m_group_name, getReverse(),
-                                /*new tracks*/ true );
-            addTracks();
-        }
-        else if (button == "start")
-        {
-            // Normal GP: start GP
-            const int local_players = race_manager->getNumLocalPlayers();
-            const bool has_AI = race_manager->hasAI();
-            const int num_ai = has_AI ? m_ai_kart_spinner->getValue() : 0;
-            
-            race_manager->setNumKarts(local_players + num_ai);
-            UserConfigParams::m_num_karts_per_gamemode[RaceManager::MAJOR_MODE_GRAND_PRIX] = local_players + num_ai;
-            
-            m_gp.changeReverse(getReverse());
-            race_manager->startGP(m_gp, false, false);
-        }
-        else if (button == "continue")
-        {
-            // Normal GP: continue a saved GP
-            m_gp.changeReverse(getReverse());
-            race_manager->startGP(m_gp, false, true);
-        }
-    }   // name=="buttons"
-    else if (name=="group-spinner")
+        // Create a new GP:
+        m_gp.createRandomGP(m_num_tracks_spinner->getValue(),
+                            m_group_name, getReverse(),
+                            /*new tracks*/ true );
+        addTracks();
+    }
+    else if (name == "start")
+    {
+        // Normal GP: start GP
+        const int local_players = race_manager->getNumLocalPlayers();
+        const bool has_AI = race_manager->hasAI();
+        const int num_ai = has_AI ? m_ai_kart_spinner->getValue() : 0;
+        
+        race_manager->setNumKarts(local_players + num_ai);
+        UserConfigParams::m_num_karts_per_gamemode[RaceManager::MAJOR_MODE_GRAND_PRIX] = local_players + num_ai;
+        
+        m_gp.changeReverse(getReverse());
+        race_manager->startGP(m_gp, false, false);
+    }
+    else if (name == "continue")
+    {
+        // Normal GP: continue a saved GP
+        m_gp.changeReverse(getReverse());
+        race_manager->startGP(m_gp, false, true);
+    }
+    else if (name == "group-spinner")
     {
         m_group_name = stringc(m_group_names[m_group_spinner->getValue()].c_str()).c_str();
 
@@ -348,18 +340,18 @@ void GPInfoScreen::eventCallback(Widget *, const std::string &name,
                             getReverse(),  /*new_tracks*/true);
         addTracks();
     }
-    else if (name=="track-spinner")
+    else if (name == "track-spinner")
     {
         m_gp.changeTrackNumber(m_num_tracks_spinner->getValue(), m_group_name);
         addTracks();
     }
-    else if (name=="ai-spinner")
+    else if (name == "ai-spinner")
     {
         const int num_ai = m_ai_kart_spinner->getValue();
         race_manager->setNumKarts( race_manager->getNumLocalPlayers() + num_ai );
         UserConfigParams::m_num_karts_per_gamemode[RaceManager::MAJOR_MODE_GRAND_PRIX] = race_manager->getNumLocalPlayers() + num_ai;
     }
-    else if(name=="back")
+    else if(name == "back")
     {
         StateManager::get()->escapePressed();
     }

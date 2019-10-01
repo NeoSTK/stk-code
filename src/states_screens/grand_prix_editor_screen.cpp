@@ -88,35 +88,28 @@ void GrandPrixEditorScreen::eventCallback(Widget* widget, const std::string& nam
                 setSelection (grand_prix_manager->getGrandPrix(selected));
         }
     }
-    else if (name == "menu")
+    else if (name == "new")
     {
-        RibbonWidget* menu = getWidget<RibbonWidget>("menu");
-        assert(menu != NULL);
-        m_action = menu->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-
-        if (m_action == "new" || m_action == "copy")
-        {
-            new GeneralTextFieldDialog(_("Please enter the name of the grand prix"),
-                std::bind(&GrandPrixEditorScreen::setNewGPWithName,
-                          this, std::placeholders::_1), validateName);
-        }
-        else if (m_action == "edit" && m_selection != NULL)
-        {
-            showEditScreen(m_selection);
-        }
-        else if (m_action == "remove" && m_selection != NULL)
-        {
-            new MessageDialog(
-                _("Are you sure you want to remove '%s'?", m_selection->getName().c_str()),
-                MessageDialog::MESSAGE_DIALOG_CONFIRM,
-                this, false);
-        }
-        else if (m_action == "rename" && m_selection != NULL)
-        {
-            new GeneralTextFieldDialog(_("Please enter the name of the grand prix"),
-                std::bind(&GrandPrixEditorScreen::setNewGPWithName,
-                          this, std::placeholders::_1), validateName);
-        }
+        new GeneralTextFieldDialog(_("Please enter the name of the grand prix"),
+            std::bind(&GrandPrixEditorScreen::setNewGPWithName,
+                      this, std::placeholders::_1), validateName);
+    }
+    else if (name == "edit")
+    {
+        showEditScreen(m_selection);
+    }
+    else if (name == "remove")
+    {
+        new MessageDialog(
+            _("Are you sure you want to remove '%s'?", m_selection->getName().c_str()),
+            MessageDialog::MESSAGE_DIALOG_CONFIRM,
+            this, false);
+    }
+    else if (name == "rename")
+    {
+        new GeneralTextFieldDialog(_("Please enter the name of the grand prix"),
+            std::bind(&GrandPrixEditorScreen::setNewGPWithName,
+                      this, std::placeholders::_1), validateName);
     }
     else if (name == "gpgroups")
     {

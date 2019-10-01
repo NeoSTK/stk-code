@@ -71,7 +71,7 @@ public:
     // ------------------------------------------------------------------------
     virtual void onUpdate(float dt) OVERRIDE;
     // ------------------------------------------------------------------------
-    GUIEngine::EventPropagation processEvent(const std::string& eventSource)
+    GUIEngine::EventPropagation processEvent(const std::string& event_source)
         OVERRIDE;
     // ------------------------------------------------------------------------
     GUIEngine::TextBoxWidget* getTextField() const     { return m_text_field; }

@@ -59,28 +59,19 @@ GeneralTextFieldDialog::~GeneralTextFieldDialog()
 }   // ~GeneralTextFieldDialog
 
 // -----------------------------------------------------------------------------
-GUIEngine::EventPropagation GeneralTextFieldDialog::processEvent(const std::string& eventSource)
-{ 
-    GUIEngine::RibbonWidget* buttons_ribbon =
-        getWidget<GUIEngine::RibbonWidget>("buttons");
-    
-    if(eventSource == "buttons")
+GUIEngine::EventPropagation GeneralTextFieldDialog::processEvent(const std::string& event_source)
+{
+	if (event_source == "cancel")
     {
-        const std::string& button =
-	    buttons_ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-
-	if (button == "cancel")
-        {
-            dismiss();
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if (button == "ok")
-        {
-	    // If validation callback return true, dismiss the dialog
-            if (!m_self_destroy && m_val_cb(m_title, m_text_field))
-                m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
+        dismiss();
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "ok")
+    {
+    // If validation callback return true, dismiss the dialog
+        if (!m_self_destroy && m_val_cb(m_title, m_text_field))
+            m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent

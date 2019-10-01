@@ -221,88 +221,80 @@ void GhostReplayInfoDialog::updateReplayDisplayedInfo()
 GUIEngine::EventPropagation
     GhostReplayInfoDialog::processEvent(const std::string& event_source)
 {
-
-    if (event_source == "actions")
+    if(event_source == "start")
     {
-        const std::string& selection =
-                m_action_widget->getSelectionIDString(PLAYER_ID_GAME_MASTER);
+        // Make sure to enable the correct race mode
+        race_manager->setMinorMode(GhostReplaySelection::getInstance()->getActiveMode());
 
-        if(selection == "start")
+        bool reverse = m_rd.m_reverse;
+        std::string track_name = m_rd.m_track_name;
+        int laps = m_rd.m_laps;
+        int replay_id = m_replay_id;
+
+        race_manager->setRecordRace(m_record_race);
+        race_manager->setWatchingReplay(m_watch_only);
+      
+        ReplayPlay::get()->setReplayFile(replay_id);
+        if (m_compare_ghost)
         {
-            // Make sure to enable the correct race mode
-            race_manager->setMinorMode(GhostReplaySelection::getInstance()->getActiveMode());
-
-            bool reverse = m_rd.m_reverse;
-            std::string track_name = m_rd.m_track_name;
-            int laps = m_rd.m_laps;
-            int replay_id = m_replay_id;
-
-            race_manager->setRecordRace(m_record_race);
-            race_manager->setWatchingReplay(m_watch_only);
-          
-            ReplayPlay::get()->setReplayFile(replay_id);
-            if (m_compare_ghost)
-            {
-                int second_replay_id = ReplayPlay::get()->getReplayIdByUID(m_compare_replay_uid);
-                ReplayPlay::get()->setSecondReplayFile(second_replay_id, /* use a second replay*/ true);
-                m_compare_ghost = false;
-            }
-            else
-                ReplayPlay::get()->setSecondReplayFile(0, /* use a second replay*/ false);
-
-            race_manager->setRaceGhostKarts(true);
-
-            // The race manager automatically adds karts for the ghosts
-            // so only set it to the number of human players
-            race_manager->setNumKarts(race_manager->getNumLocalPlayers());
-
-            // Disable accidentally unlocking of a challenge
-            PlayerManager::getCurrentPlayer()->setCurrentChallenge("");
-
-            race_manager->setReverseTrack(reverse);
-
-            //Reset comparison if active
-            GhostReplaySelection::getInstance()->setCompare(false);
-
-            ModalDialog::dismiss();
-          
-            if (race_manager->isWatchingReplay())
-                race_manager->startWatchingReplay(track_name, laps);
-            else
-                race_manager->startSingleRace(track_name, laps, false);
-
-            return GUIEngine::EVENT_BLOCK;
+            int second_replay_id = ReplayPlay::get()->getReplayIdByUID(m_compare_replay_uid);
+            ReplayPlay::get()->setSecondReplayFile(second_replay_id, /* use a second replay*/ true);
+            m_compare_ghost = false;
         }
-        else if(selection == "add-ghost-to-compare")
-        {
-            // First set values for comparison
-            m_compare_replay_uid = m_rd.m_replay_uid;
+        else
+            ReplayPlay::get()->setSecondReplayFile(0, /* use a second replay*/ false);
 
-            m_compare_ghost = true;
+        race_manager->setRaceGhostKarts(true);
 
-            refreshMainScreen();
+        // The race manager automatically adds karts for the ghosts
+        // so only set it to the number of human players
+        race_manager->setNumKarts(race_manager->getNumLocalPlayers());
 
-            // Now quit the dialog
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if(selection == "remove")
-        {
-            std::string fn = m_rd.m_filename;
-            ModalDialog::dismiss();
+        // Disable accidentally unlocking of a challenge
+        PlayerManager::getCurrentPlayer()->setCurrentChallenge("");
 
-            dynamic_cast<GhostReplaySelection*>(GUIEngine::getCurrentScreen())
-                ->onDeleteReplay(fn);
-            return GUIEngine::EVENT_BLOCK;
-        }
-        else if (selection == "back")
-        {
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
+        race_manager->setReverseTrack(reverse);
+
+        //Reset comparison if active
+        GhostReplaySelection::getInstance()->setCompare(false);
+
+        ModalDialog::dismiss();
+      
+        if (race_manager->isWatchingReplay())
+            race_manager->startWatchingReplay(track_name, laps);
+        else
+            race_manager->startSingleRace(track_name, laps, false);
+
+        return GUIEngine::EVENT_BLOCK;
     }
+    else if(event_source == "add-ghost-to-compare")
+    {
+        // First set values for comparison
+        m_compare_replay_uid = m_rd.m_replay_uid;
 
-    if (event_source == "record-race")
+        m_compare_ghost = true;
+
+        refreshMainScreen();
+
+        // Now quit the dialog
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(event_source == "remove")
+    {
+        std::string fn = m_rd.m_filename;
+        ModalDialog::dismiss();
+
+        dynamic_cast<GhostReplaySelection*>(GUIEngine::getCurrentScreen())
+            ->onDeleteReplay(fn);
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "back")
+    {
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if (event_source == "record-race")
     {
         m_record_race = m_record_widget->getState();
     }
@@ -322,7 +314,6 @@ GUIEngine::EventPropagation
             m_replay_id = ReplayPlay::get()->getReplayIdByUID(m_rd.m_replay_uid);
         }
     }
-
     else if (event_source == "compare-ghost")
     {
         m_compare_ghost = m_compare_widget->getState();

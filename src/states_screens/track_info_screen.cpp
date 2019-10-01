@@ -595,14 +595,9 @@ void TrackInfoScreen::onEnterPressedInternal()
 void TrackInfoScreen::eventCallback(Widget* widget, const std::string& name,
                                    const int playerID)
 {
-    if (name == "buttons")
+    if(name == "start")
     {
-        const std::string &button = getWidget<GUIEngine::RibbonWidget>("buttons")
-                                  ->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if(button=="start")
-            onEnterPressedInternal();
-        else if(button=="back")
-            StateManager::get()->escapePressed();
+        onEnterPressedInternal();
     }
     else if (name == "back")
     {

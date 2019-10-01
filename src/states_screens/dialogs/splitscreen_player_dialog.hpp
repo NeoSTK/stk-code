@@ -56,8 +56,6 @@ private:
 
     GUIEngine::CheckBoxWidget* m_handicap;
 
-    GUIEngine::RibbonWidget* m_options_widget;
-
     GUIEngine::IconButtonWidget* m_add;
 
     GUIEngine::IconButtonWidget* m_connect;

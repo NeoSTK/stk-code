@@ -43,16 +43,16 @@
 
         <spacer proportion="3" width="10"/>
 
-        <buttonbar id="options" width="90%" height="20%" align="center">
-            <icon-button id="add" width="64" height="64" icon="gui/icons/blue_plus.png"
+        <div width="90%" height="20%" align="center" layout="horizontal-row">
+            <icon-button id="add" height="100%" proportion="1" icon="gui/icons/blue_plus.png"
                          I18N="Splitscreen player in network"  text="Add player" label_location="bottom"/>
-            <icon-button id="connect" width="64" height="64" icon="gui/icons/green_check.png"
+            <icon-button id="connect" height="100%" proportion="1" icon="gui/icons/green_check.png"
                          I18N="Splitscreen player in network" text="All players ready" label_location="bottom"/>
-            <icon-button id="cancel" width="64" height="64" icon="gui/icons/main_quit.png"
+            <icon-button id="cancel" height="100%" proportion="1" icon="gui/icons/main_quit.png"
                          I18N="Splitscreen player in network" text="Cancel" label_location="bottom"/>
-            <icon-button id="reset" width="64" height="64" icon="gui/icons/remove.png"
+            <icon-button id="reset" height="100%" proportion="1" icon="gui/icons/remove.png"
                          I18N="Splitscreen player in network" text="Clear players" label_location="bottom"/>
-        </buttonbar>
+        </div>
 
         <spacer height="1f" width="10"/>
     </div>

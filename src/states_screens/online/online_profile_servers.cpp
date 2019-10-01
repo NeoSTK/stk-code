@@ -77,10 +77,6 @@ void OnlineProfileServers::init()
         getWidget<IconButtonWidget>("create_wan_server")->setActive(true);
 #endif
         getWidget<IconButtonWidget>("quick_wan_play")->setActive(true);
-        RibbonWidget* ribbon = getWidget<RibbonWidget>("wan");
-        assert(ribbon != NULL);
-        ribbon->select("find_wan_server", PLAYER_ID_GAME_MASTER);
-        ribbon->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
     }
 }   // init
 
@@ -93,31 +89,25 @@ void OnlineProfileServers::eventCallback(Widget* widget, const std::string& name
         StateManager::get()->escapePressed();
         return;
     }
-    if (name == "wan")
+    else if (name == "find_wan_server")
     {
-        RibbonWidget* ribbon = dynamic_cast<RibbonWidget*>(widget);
-        std::string selection = ribbon->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == "find_wan_server")
-        {
-            NetworkConfig::get()->setIsWAN();
-            NetworkConfig::get()->setIsServer(false);
-            ServerSelection::getInstance()->push();
-        }
-#ifndef IOS_STK
-        else if (selection == "create_wan_server")
-        {
-            NetworkConfig::get()->setIsWAN();
-            CreateServerScreen::getInstance()->push();
-        }
-#endif
-        else if (selection == "quick_wan_play")
-        {
-            NetworkConfig::get()->setIsWAN();
-            NetworkConfig::get()->setIsServer(false);
-            doQuickPlay();
-        }
+        NetworkConfig::get()->setIsWAN();
+        NetworkConfig::get()->setIsServer(false);
+        ServerSelection::getInstance()->push();
     }
-
+#ifndef IOS_STK
+    else if (name == "create_wan_server")
+    {
+        NetworkConfig::get()->setIsWAN();
+        CreateServerScreen::getInstance()->push();
+    }
+#endif
+    else if (name == "quick_wan_play")
+    {
+        NetworkConfig::get()->setIsWAN();
+        NetworkConfig::get()->setIsServer(false);
+        doQuickPlay();
+    }
 }   // eventCallback
 
 // ----------------------------------------------------------------------------

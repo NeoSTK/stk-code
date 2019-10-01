@@ -58,8 +58,6 @@ void SplitscreenPlayerDialog::beforeAddingWidgets()
     assert(m_message != NULL);
     m_handicap = getWidget<CheckBoxWidget>("handicap");
     assert(m_handicap != NULL);
-    m_options_widget = getWidget<RibbonWidget>("options");
-    assert(m_options_widget != NULL);
     m_add = getWidget<IconButtonWidget>("add");
     assert(m_add != NULL);
     m_connect = getWidget<IconButtonWidget>("connect");
@@ -74,14 +72,12 @@ void SplitscreenPlayerDialog::beforeAddingWidgets()
         m_available_players.clear();
     }
 
-    m_options_widget->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
     if (m_available_players.empty())
     {
         getWidget("name-text")->setVisible(false);
         getWidget("handicap-row")->setVisible(false);
         m_add->setVisible(false);
         m_profiles->setVisible(false);
-        m_options_widget->select("connect", PLAYER_ID_GAME_MASTER);
     }
     else
     {
@@ -91,7 +87,6 @@ void SplitscreenPlayerDialog::beforeAddingWidgets()
         m_profiles->setVisible(true);
         m_handicap->setState(false);
         m_handicap->setActive(UserConfigParams::m_per_player_difficulty);
-        m_options_widget->select("add", PLAYER_ID_GAME_MASTER);
     }
 
     input_manager->getDeviceManager()->setAssignMode(NO_ASSIGN);
@@ -103,62 +98,57 @@ void SplitscreenPlayerDialog::beforeAddingWidgets()
 GUIEngine::EventPropagation
     SplitscreenPlayerDialog::processEvent(const std::string& source)
 {
-    if (source == m_options_widget->m_properties[PROP_ID])
+    if (source == m_add->m_properties[PROP_ID])
     {
-        const std::string& selection = m_options_widget
-            ->getSelectionIDString(PLAYER_ID_GAME_MASTER);
-        if (selection == m_add->m_properties[PROP_ID])
+        const unsigned pid = m_profiles->getValue();
+        assert(pid < PlayerManager::get()->getNumPlayers());
+        PlayerProfile* p = m_available_players[pid];
+        const PerPlayerDifficulty d = m_handicap->getState() ?
+            PLAYER_DIFFICULTY_HANDICAP : PLAYER_DIFFICULTY_NORMAL;
+        if (NetworkConfig::get()->addNetworkPlayer(m_device, p, d))
         {
-            const unsigned pid = m_profiles->getValue();
-            assert(pid < PlayerManager::get()->getNumPlayers());
-            PlayerProfile* p = m_available_players[pid];
-            const PerPlayerDifficulty d = m_handicap->getState() ?
-                PLAYER_DIFFICULTY_HANDICAP : PLAYER_DIFFICULTY_NORMAL;
-            if (NetworkConfig::get()->addNetworkPlayer(m_device, p, d))
-            {
-                core::stringw name = p->getName();
-                if (d == PLAYER_DIFFICULTY_HANDICAP)
-                    name = _("%s (handicapped)", name);
-                NetworkingLobby::getInstance()->addSplitscreenPlayer(name);
-                m_self_destroy = true;
-                return GUIEngine::EVENT_BLOCK;
-            }
-            else
-            {
-                //I18N: in splitscreen player dialog for network game
-                m_message->setErrorColor();
-                m_message->setText(_("Input device already exists."),
-                    false);
-            }
+            core::stringw name = p->getName();
+            if (d == PLAYER_DIFFICULTY_HANDICAP)
+                name = _("%s (handicapped)", name);
+            NetworkingLobby::getInstance()->addSplitscreenPlayer(name);
+            m_self_destroy = true;
             return GUIEngine::EVENT_BLOCK;
         }
-        else if(selection == m_connect->m_properties[PROP_ID])
+        else
         {
-            if (!NetworkConfig::get()->getNetworkPlayers().empty())
-            {
-                NetworkConfig::get()->doneAddingNetworkPlayers();
-                NetworkingLobby::getInstance()->finishAddingPlayers();
-                m_self_destroy = true;
-                return GUIEngine::EVENT_BLOCK;
-            }
             //I18N: in splitscreen player dialog for network game
             m_message->setErrorColor();
-            m_message->setText(
-                _("No player available for connecting to server."), false);
-            return GUIEngine::EVENT_BLOCK;
+            m_message->setText(_("Input device already exists."),
+                false);
         }
-        else if(selection == m_cancel->m_properties[PROP_ID])
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(source == m_connect->m_properties[PROP_ID])
+    {
+        if (!NetworkConfig::get()->getNetworkPlayers().empty())
         {
+            NetworkConfig::get()->doneAddingNetworkPlayers();
+            NetworkingLobby::getInstance()->finishAddingPlayers();
             m_self_destroy = true;
             return GUIEngine::EVENT_BLOCK;
         }
-        else if(selection == m_reset->m_properties[PROP_ID])
-        {
-            NetworkConfig::get()->cleanNetworkPlayers();
-            NetworkingLobby::getInstance()->cleanAddedPlayers();
-            m_self_destroy = true;
-            return GUIEngine::EVENT_BLOCK;
-        }
+        //I18N: in splitscreen player dialog for network game
+        m_message->setErrorColor();
+        m_message->setText(
+            _("No player available for connecting to server."), false);
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(source == m_cancel->m_properties[PROP_ID])
+    {
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
+    }
+    else if(source == m_reset->m_properties[PROP_ID])
+    {
+        NetworkConfig::get()->cleanNetworkPlayers();
+        NetworkingLobby::getInstance()->cleanAddedPlayers();
+        m_self_destroy = true;
+        return GUIEngine::EVENT_BLOCK;
     }
     return GUIEngine::EVENT_LET;
 }   // processEvent

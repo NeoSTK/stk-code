@@ -3,10 +3,10 @@
     <div x="3%" y="2%" width="94%" height="96%" layout="vertical-row" id="div">
         <roundedbox width="100%" height="100%" align="center">
             <div x="2%" y="2%" width="96%" height="96%" layout="vertical-row">
-                <div id="result-table" width="100%" height="80%">
+                <div id="result-table" width="100%" height="77%">
                     <!-- Contents is added programatically -->
                 </div>
-                <spacer height="3%" width="100%"/>
+                <spacer height="3%"/>
                     <!-- The actual button texts will vary depending on what type of race
                          was being run, and if something was unlocked etc. So we don't
                          specify a text here, and label the buttons :
@@ -15,13 +15,13 @@
                          bottom: 'Abort GP', 'Back to the menu' (or invisible)
                          Setting text=" " is important, otherwise the height of the
                          widget is incorrect.                             -->
-                <buttonbar id="operations" width="65%" height="18%" align="center">
-                    <icon-button id="left"   width="128" height="128" text="Left"/>
-                    <icon-button id="middle" width="128" height="128" text="Middle"/>
-                    <icon-button id="right"  width="128" height="128" text="Right"/>
-                </buttonbar>
+                <div width="65%" height="18%" align="center" layout="horizontal-row">
+                    <icon-button id="left"   height="100%" proportion="1" align="center" text="Left"/>
+                    <icon-button id="middle" height="100%" proportion="1" align="center" text="Middle"/>
+                    <icon-button id="right"  height="100%" proportion="1" align="center" text="Right"/>
+                </div>
             </div>
         </roundedbox>
-        <spacer height="3%" width="90%"/>
+        <spacer height="3%"/>
     </div>
 </stkgui>

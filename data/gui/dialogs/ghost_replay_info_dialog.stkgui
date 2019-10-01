@@ -37,20 +37,20 @@
                 </div>
 
                 <div width="95%" height="40%" align="center">
-                    <buttonbar id="actions" x="0" y="0" height="100%" width="100%" align="center">
-                        <icon-button id="start" width="128" height="128"
+                    <div x="0" y="0" height="100%" width="100%" align="center" layout="horizontal-row">
+                        <icon-button id="start" height="100%" proportion="1"
                                      icon="gui/icons/green_check.png"
                                      I18N="Ghost replay info screen action" text="Start Race" word_wrap="true" />
-                        <icon-button id="add-ghost-to-compare" width="128" height="128"
+                        <icon-button id="add-ghost-to-compare" height="100%" proportion="1"
                                      icon="gui/icons/ghost_plus.png"
                                      I18N="Ghost replay info screen action" text="Compare ghost" word_wrap="true" />
-                        <icon-button id="remove" width="128" height="128"
+                        <icon-button id="remove" height="100%" proportion="1"
                                      icon="gui/icons/remove.png"
                                      I18N="Ghost replay info action" text="Remove" word_wrap="true" />
-                        <icon-button id="back" width="128" height="128"
+                        <icon-button id="back" height="100%" proportion="1"
                                      icon="gui/icons/back.png"
                                      I18N="Ghost replay info action" text="Back" word_wrap="true" />
-                    </buttonbar>
+                    </div>
                 </div>
                 <spacer width="10" height="10%"/>
             </div>
