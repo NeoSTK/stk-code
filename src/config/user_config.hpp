@@ -449,6 +449,12 @@ namespace UserConfigParams
     PARAM_PREFIX StringUserConfigParam m_last_used_kart_group
             PARAM_DEFAULT( StringUserConfigParam("all", "last_kart_group",
                                                  "Last selected kart group") );
+    PARAM_PREFIX IntUserConfigParam          m_soccer_red_ai_num
+            PARAM_DEFAULT(  IntUserConfigParam(0, "m_soccer_red_ai_num",
+            &m_race_setup_group, "Number of red AI karts in soccer mode.") );
+    PARAM_PREFIX IntUserConfigParam          m_soccer_blue_ai_num
+            PARAM_DEFAULT(  IntUserConfigParam(0, "m_soccer_blue_ai_num",
+            &m_race_setup_group, "Number of blue AI karts in soccer mode.") );
 
     // ---- Wiimote data
     PARAM_PREFIX GroupUserConfigParam        m_wiimote_group
@@ -645,7 +651,10 @@ namespace UserConfigParams
                         "high quality method with SSE"));
     PARAM_PREFIX FloatUserConfigParam         m_font_size
         PARAM_DEFAULT(  FloatUserConfigParam(3, "font_size",
-        &m_video_group,"The size of fonts. 0 is the smallest and 6 is the biggest") );
+        &m_video_group, "The size of fonts. 0 is the smallest and 6 is the biggest") );
+    PARAM_PREFIX BoolUserConfigParam        m_show_powerups
+        PARAM_DEFAULT(BoolUserConfigParam(true, "show_powerups",
+        &m_video_group, "Show everyone's items in game"));
 
     // ---- Recording
     PARAM_PREFIX GroupUserConfigParam        m_recording_group
@@ -748,13 +757,6 @@ namespace UserConfigParams
         "The stun servers that will be used to know the public address with"
         " port", {{ "stun-server", "address", "ping" }},
             {
-                { "stun.12connect.com:3478", 0u },
-                { "stun.callwithus.com:3478", 0u },
-                { "stun.cope.es:3478", 0u },
-                { "stun.counterpath.net:3478", 0u },
-                { "stun.ekiga.net:3478", 0u },
-                { "stun.ivao.aero:3478", 0u },
-                { "stun.schlund.de:3478", 0u },
                 { "stun.stunprotocol.org:3478", 0u },
                 { "stun.l.google.com:19302", 0u },
                 { "stun1.l.google.com:19302", 0u },
@@ -839,10 +841,10 @@ namespace UserConfigParams
                            &m_graphics_quality,
                            "Quality of anisotropic filtering (usual values include 2-4-8-16; 0 to disable)") );
 
-    PARAM_PREFIX BoolUserConfigParam         m_vsync
-            PARAM_DEFAULT( BoolUserConfigParam(false, "vsync",
+    PARAM_PREFIX IntUserConfigParam         m_swap_interval
+            PARAM_DEFAULT( IntUserConfigParam(0, "swap_interval",
                            &m_graphics_quality,
-                           "Whether vertical sync is enabled") );
+                           "Swap interval for vsync: 0 = disabled, 1 = full, 2 = half") );
     PARAM_PREFIX BoolUserConfigParam         m_motionblur
             PARAM_DEFAULT( BoolUserConfigParam(false,
                            "motionblur_enabled", &m_graphics_quality,
@@ -920,7 +922,7 @@ namespace UserConfigParams
                            "Last selected track group") );
 
     PARAM_PREFIX StringUserConfigParam      m_skin_file
-            PARAM_DEFAULT(  StringUserConfigParam("Peach.stkskin", "skin_file",
+            PARAM_DEFAULT(  StringUserConfigParam("peach", "skin_file",
                                                   "Name of the skin to use") );
 
     PARAM_PREFIX IntUserConfigParam        m_minimap_display

@@ -78,17 +78,38 @@ void OptionsScreenUI::loadedFromFile()
     m_skins.clear();
     skinSelector->clearLabels();
 
-    std::set<std::string> skinFiles;
-    file_manager->listFiles(skinFiles /* out */, file_manager->getAsset(FileManager::SKIN,""),
+    std::set<std::string> skin_files;
+    file_manager->listFiles(skin_files /* out */, file_manager->getAsset(FileManager::SKIN,""),
+                            true /* make full path */ );
+    std::set<std::string> addon_skin_files;
+    file_manager->listFiles(addon_skin_files /* out */, file_manager->getAddonsFile("skins/"),
                             true /* make full path */ );
 
-    for (std::set<std::string>::iterator it = skinFiles.begin(); it != skinFiles.end(); it++)
-    {
-        if(StringUtils::getExtension(*it)=="stkskin")
+    auto lb = [](const std::set<std::string>& files, bool addon,
+                 std::map<core::stringw, std::string>& result)->void
         {
-            m_skins.push_back( *it );
-        }
-    }
+            for (auto& f : files)
+            {
+                std::string stkskin = f + "/stkskin.xml";
+                if (file_manager->fileExists(stkskin))
+                {
+                    XMLNode* root = file_manager->createXMLTree(stkskin);
+                    if (!root)
+                        continue;
+                    core::stringw skin_name;
+                    if (root->get("name", &skin_name))
+                    {
+                        std::string skin_id = StringUtils::getBasename(f);
+                        if (addon)
+                            skin_id = std::string("addon_") + skin_id;
+                        result[skin_name] = skin_id;
+                    }
+                    delete root;
+                }
+            }
+        };
+    lb(skin_files, false, m_skins);
+    lb(addon_skin_files, true, m_skins);
 
     if (m_skins.size() == 0)
     {
@@ -99,12 +120,8 @@ void OptionsScreenUI::loadedFromFile()
     }
 
     const int skin_count = (int)m_skins.size();
-    for (int n=0; n<skin_count; n++)
-    {
-        const std::string skinFileName = StringUtils::getBasename(m_skins[n]);
-        const std::string skinName = StringUtils::removeExtension( skinFileName );
-        skinSelector->addLabel( core::stringw(skinName.c_str()) );
-    }
+    for (auto& p : m_skins)
+        skinSelector->addLabel(p.first);
     skinSelector->m_properties[GUIEngine::PROP_MIN_VALUE] = "0";
     skinSelector->m_properties[GUIEngine::PROP_MAX_VALUE] = StringUtils::toString(skin_count-1);
 
@@ -195,7 +212,6 @@ void OptionsScreenUI::init()
     GUIEngine::SpinnerWidget* font_size = getWidget<GUIEngine::SpinnerWidget>("font_size");
     assert( font_size != NULL );
 
-    m_prev_font_size = UserConfigParams::m_font_size;
     int size_int = (int)roundf(UserConfigParams::m_font_size);
     if (size_int < 0 || size_int > 6)
         size_int = 3;
@@ -219,14 +235,22 @@ void OptionsScreenUI::init()
     CheckBoxWidget* fps = getWidget<CheckBoxWidget>("showfps");
     assert( fps != NULL );
     fps->setState( UserConfigParams::m_display_fps );
+    
+    CheckBoxWidget* show_powerups = getWidget<CheckBoxWidget>("show_powerups");
+    assert(show_powerups != NULL);
+    show_powerups->setState(UserConfigParams::m_show_powerups);
 
     // --- select the right skin in the spinner
     bool currSkinFound = false;
-    const int skinCount = (int) m_skins.size();
-    std::string user_skin = StringUtils::toLowerCase(UserConfigParams::m_skin_file.c_str());
-    for (int n=0; n<skinCount; n++)
+    const std::string& user_skin = UserConfigParams::m_skin_file;
+    skinSelector->setActive(!in_game);
+
+    for (int n = 0; n < skinSelector->getMax(); n++)
     {
-        const std::string skinFileName = StringUtils::toLowerCase(StringUtils::getBasename(m_skins[n]));
+        auto ret = m_skins.find(skinSelector->getStringValueFromID(n));
+        if (ret == m_skins.end())
+            continue;
+        const std::string skinFileName = ret->second;
 
         if (user_skin == skinFileName)
         {
@@ -283,9 +307,40 @@ void OptionsScreenUI::eventCallback(Widget* widget, const std::string& name, con
         assert( skinSelector != NULL );
 
         const core::stringw selectedSkin = skinSelector->getStringValue();
-        UserConfigParams::m_skin_file = core::stringc(selectedSkin.c_str()).c_str() + std::string(".stkskin");
+        UserConfigParams::m_skin_file = m_skins[selectedSkin];
         irr_driver->unsetMaxTextureSize();
+        bool prev_icon_theme = GUIEngine::getSkin()->hasIconTheme();
+        bool prev_font = GUIEngine::getSkin()->hasFont();
         GUIEngine::reloadSkin();
+        if (GUIEngine::getSkin()->hasIconTheme() != prev_icon_theme ||
+            prev_font != GUIEngine::getSkin()->hasFont())
+        {
+            if (prev_font != GUIEngine::getSkin()->hasFont())
+            {
+                GUIEngine::clear();
+                GUIEngine::cleanUp();
+            }
+
+            GUIEngine::clearScreenCache();
+
+            if (prev_font != GUIEngine::getSkin()->hasFont())
+            {
+                delete font_manager;
+                font_manager = new FontManager();
+                font_manager->loadFonts();
+                GUIEngine::init(irr_driver->getDevice(), irr_driver->getVideoDriver(),
+                    StateManager::get(), false/*loading*/);
+            }
+
+            Screen* screen_list[] =
+                {
+                    MainMenuScreen::getInstance(),
+                    OptionsScreenUI::getInstance(),
+                    nullptr
+                };
+            GUIEngine::switchToScreen(MainMenuScreen::getInstance());
+            StateManager::get()->resetAndSetStack(screen_list);
+        }
         irr_driver->setMaxTextureSize();
     }
     else if (name == "minimap")
@@ -299,6 +354,22 @@ void OptionsScreenUI::eventCallback(Widget* widget, const std::string& name, con
         GUIEngine::SpinnerWidget* font_size = getWidget<GUIEngine::SpinnerWidget>("font_size");
         assert( font_size != NULL );
         UserConfigParams::m_font_size = font_size->getValue();
+        GUIEngine::clear();
+        GUIEngine::cleanUp();
+        GUIEngine::clearScreenCache();
+        delete font_manager;
+        font_manager = new FontManager();
+        font_manager->loadFonts();
+        GUIEngine::init(irr_driver->getDevice(), irr_driver->getVideoDriver(),
+            StateManager::get(), false/*loading*/);
+        Screen* screen_list[] =
+            {
+                MainMenuScreen::getInstance(),
+                OptionsScreenUI::getInstance(),
+                nullptr
+            };
+        GUIEngine::switchToScreen(MainMenuScreen::getInstance());
+        StateManager::get()->resetAndSetStack(screen_list);
     }
     else if (name == "split_screen_horizontally")
     {
@@ -313,6 +384,12 @@ void OptionsScreenUI::eventCallback(Widget* widget, const std::string& name, con
         assert( fps != NULL );
         UserConfigParams::m_display_fps = fps->getState();
     }
+    else if (name == "show_powerups")
+    {
+        CheckBoxWidget* powerups = getWidget<CheckBoxWidget>("show_powerups");
+        assert( powerups != NULL );
+        UserConfigParams::m_show_powerups = powerups->getState();
+    }
 #endif
 }   // eventCallback
 
@@ -320,11 +397,6 @@ void OptionsScreenUI::eventCallback(Widget* widget, const std::string& name, con
 
 void OptionsScreenUI::tearDown()
 {
-    if (m_prev_font_size != UserConfigParams::m_font_size)
-    {
-        irr_driver->sameRestart();
-    }
-    
     Screen::tearDown();
     // save changes when leaving screen
     user_config->saveConfig();
