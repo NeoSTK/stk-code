@@ -4,10 +4,11 @@ layout(location = 3) flat in int f_material_id;
 
 layout(location = 0) out vec4 o_color;
 
+#include "utils/gamma_correction.h"
 #include "utils/sample_mesh_texture.h"
 
 void main()
 {
-    vec4 mixed_color = sampleMeshTexture0(f_material_id, f_uv) * f_vertex_color;
+    vec4 mixed_color = gamma_correction(sampleMeshTexture0(f_material_id, f_uv)) * f_vertex_color;
     o_color = vec4(mixed_color.rgb * mixed_color.a, mixed_color.a);
 }

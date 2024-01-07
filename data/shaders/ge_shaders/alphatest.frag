@@ -5,12 +5,13 @@ layout(location = 4) in float f_hue_change;
 
 layout(location = 0) out vec4 o_color;
 
+#include "utils/gamma_correction.h"
 #include "utils/sample_mesh_texture.h"
 #include "../utils/rgb_conversion.frag"
 
 void main()
 {
-    vec4 tex_color = sampleMeshTexture0(f_material_id, f_uv);
+    vec4 tex_color = gamma_correction(sampleMeshTexture0(f_material_id, f_uv));
     if (tex_color.a * f_vertex_color.a < 0.5)
         discard;
 
