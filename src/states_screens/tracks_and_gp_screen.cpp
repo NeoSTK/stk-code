@@ -201,7 +201,7 @@ void TracksAndGPScreen::init()
         const GrandPrixData* gp = grand_prix_manager->getGrandPrix(n);
         const std::vector<std::string> tracks = gp->getTrackNames(true);
 
-        //Skip epmpty GPs
+        //Skip empty GPs
         if (gp->getNumberOfTracks()==0)
             continue;
 
