@@ -510,9 +510,9 @@ GEVulkanDriver::GEVulkanDriver(const SIrrlichtCreationParameters& params,
     m_vk.reset(new VK());
     m_physical_device = VK_NULL_HANDLE;
     m_present_queue = VK_NULL_HANDLE;
-    memset(m_queue_family, (uint8_t)-1, sizeof(m_queue_family));
-    memset(m_queue_count, (uint8_t)-1, sizeof(m_queue_count));
-    m_present_family = (uint32_t)-1;
+    memset(m_queue_family, 0, sizeof(m_queue_family));
+    memset(m_queue_count, 0, sizeof(m_queue_count));
+    m_present_family = 0;
     m_queue_family_count = 0;
     m_properties = {};
     m_features = {};
