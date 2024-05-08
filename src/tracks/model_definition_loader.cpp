@@ -115,7 +115,13 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
                 m_track->handleAnimatedTextures(scene_node, *group[m].m_xml);
 
                 Track::uploadNodeVertexBuffer(scene_node);
-                lod_node->add(group[m].m_distance, scene_node, true);
+
+                int vertex_count = 0;
+                for (int i = 0; i < a_mesh->getMeshBufferCount(); i++)
+                {
+                    vertex_count += a_mesh->getMeshBuffer(i)->getVertexCount();
+                }
+                lod_node->add(vertex_count, scene_node, true, true);
             }
             else
 #endif
@@ -140,7 +146,13 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
                 m_track->handleAnimatedTextures(scene_node, *group[m].m_xml);
 
                 Track::uploadNodeVertexBuffer(scene_node);
-                lod_node->add(group[m].m_distance, scene_node, true);
+
+                int vertex_count = 0;
+                for (int i = 0; i < a_mesh->getMeshBufferCount(); i++)
+                {
+                    vertex_count += a_mesh->getMeshBuffer(i)->getVertexCount();
+                }
+                lod_node->add(vertex_count, scene_node, true, true);
             }
         }
         if (lod_node->getAllNodes().empty())

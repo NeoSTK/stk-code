@@ -87,15 +87,6 @@ int LODNode::getLevel()
     const int squared_dist =
         (int)((m_nodes[0]->getAbsolutePosition()).getDistanceFromSQ(pos.toIrrVector() ));
 
-    if (!m_lod_distances_updated)
-    {
-        for (unsigned int n=0; n<m_detail.size(); n++)
-        {
-            m_detail[n] = (int)((float)m_detail[n] * irr_driver->getLODMultiplier());
-        }
-        m_lod_distances_updated = true;
-    }
-
     // The LoD levels are ordered from highest quality to lowest
     unsigned int lod_levels = m_detail.size();
 
@@ -104,8 +95,7 @@ int LODNode::getLevel()
         // If a high-level of detail would only be triggered from very close (distance < ~90),
         // and there are lower levels available, skip it completely. It's better to display
         // a low level than to have the high-level pop suddenly when already quite close.
-        if (squared_dist < m_detail[n] &&
-            (m_detail[n] > 8000 || (n == lod_levels - 1)))
+        if (squared_dist < m_detail[n])
         {
                 m_current_level = n;
                 return n;
@@ -206,51 +196,41 @@ void LODNode::autoComputeLevel(float scale)
     m_area *= scale;
 
     // Step 1 - We try to estimate how far away we need to draw
-    // This first formula is equivalent to the one used up to STK 1.4
-    float max_draw = 10*(sqrtf(m_area + 20) - 1);
-
-    // Step 2 - At really short distances, popping is more annoying even if
-    // the object is small, so we limit how small the distance can be
-    if (max_draw < 100)
-        max_draw = 40 + (max_draw * 0.6);
-
-    // Step 3 - If the draw distance is too big we artificially reduce it
-    // The formulas are still experimental and improvable.
-    if(max_draw > 250)
-        max_draw = 230 + (max_draw * 0.08);
-    // This effecte is cumulative
-    if (max_draw > 500)
-        max_draw = 200 + (max_draw * 0.6);
+    float max_draw = sqrt(m_area);
 
     // Step 4 - Distance multiplier based on the user's input
     float aggressivity = 1.0;
-    if(     UserConfigParams::m_geometry_level == 2) aggressivity = 0.8; // 2 in the params is the lowest setting
-    else if(UserConfigParams::m_geometry_level == 1) aggressivity = 1.1;
-    else if(UserConfigParams::m_geometry_level == 0) aggressivity = 1.5;
-    else if(UserConfigParams::m_geometry_level == 3) aggressivity = 2.0;
-    else if(UserConfigParams::m_geometry_level == 4) aggressivity = 2.7;
-    else if(UserConfigParams::m_geometry_level == 5) aggressivity = 3.6;
-
-    max_draw *= aggressivity;
+    if(     UserConfigParams::m_geometry_level == 2) aggressivity = 0.5; // 2 in the params is the lowest setting
+    else if(UserConfigParams::m_geometry_level == 1) aggressivity = 0.7;
+    else if(UserConfigParams::m_geometry_level == 0) aggressivity = 1.0;
+    else if(UserConfigParams::m_geometry_level == 3) aggressivity = 1.5;
+    else if(UserConfigParams::m_geometry_level == 4) aggressivity = 2.0;
+    else if(UserConfigParams::m_geometry_level == 5) aggressivity = 3.0;
 
     // Step 5 - As it is faster to compute the squared distance than distance, at runtime
     // we compare the distance saved in the LoD node with the square of the distance
     // between the camera and the object. Therefore, we apply squaring here.
-    max_draw *= max_draw;
-
-    int step = (int) (max_draw) / m_detail.size();
+    //max_draw *= max_draw;
 
     // Step 6 - Then we recompute the level of detail culling distance
     //          If there are N levels of detail, the transition distance
     //          between each level is currently each 1/Nth of the max
     //          display distance
     // TODO - investigate a better division scheme
-    int biais = m_detail.size();
+
     for(unsigned i = 0; i < m_detail.size(); i++)
     {
-        m_detail[i] = ((step / biais) * (i + 1));
-        biais--;
+        m_detail[i] = max_draw + 120.0f + 600.0f / m_detail[i] * max_draw;
+
+        if (i && m_detail[i] - m_detail[i - 1] < 40)
+            m_detail[i] = m_detail[i - 1] + 40;
     }
+    for(unsigned i = 0; i < m_detail.size(); i++)
+    {
+        m_detail[i] = aggressivity * m_detail[i];
+        m_detail[i] = m_detail[i] * m_detail[i];
+    }
+
     const size_t max_level = m_detail.size() - 1;
 
     // Only animated mesh needs to be updated bounding box every frame,
@@ -261,7 +241,7 @@ void LODNode::autoComputeLevel(float scale)
     Box = m_nodes[max_level]->getBoundingBox();
 }
 
-void LODNode::add(int level, scene::ISceneNode* node, bool reparent)
+void LODNode::add(int level, scene::ISceneNode* node, bool reparent, bool autocompute)
 {
     Box = node->getBoundingBox();
     m_area = Box.getArea();
@@ -270,7 +250,7 @@ void LODNode::add(int level, scene::ISceneNode* node, bool reparent)
     // I'm not convinced (Auria) but he's the artist pro, so I listen ;P
     // The last level should not be randomized because after that the object disappears,
     // and the location is disapparition needs to be deterministic
-    if (m_detail.size() > 0 && m_detail.back() < level * level)
+    if (!autocompute && m_detail.size() > 0 && m_detail.back() < level * level)
     {
         m_detail[m_detail.size() - 1] += (int)(((rand()%1000)-500)/500.0f*(m_detail[m_detail.size() - 1]*0.2f));
     }
@@ -280,9 +260,15 @@ void LODNode::add(int level, scene::ISceneNode* node, bool reparent)
     node->grab();
     node->remove();
     node->setPosition(core::vector3df(0,0,0));
-    m_detail.push_back(level*level);
+
+    if (autocompute)
+        m_detail.push_back(level);
+    else
+        m_detail.push_back(level*level);
+
     m_nodes.push_back(node);
     m_nodes_set.insert(node);
+
     node->setParent(this);
 
     node->drop();

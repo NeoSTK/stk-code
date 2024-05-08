@@ -100,7 +100,7 @@ public:
       * \param node  The node to show at this level
       * \param reparent If true, node will be removed from its current parent first
       */
-    void add(int level, scene::ISceneNode* node, bool reparent);
+    void add(int level, scene::ISceneNode* node, bool reparent, bool autocompute = false);
 
     /**
       * This method can be used to automatically compute LoD level
