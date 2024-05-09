@@ -217,7 +217,7 @@ void LODNode::autoComputeLevel(float scale)
     // TODO - investigate a better division scheme
 
     float max_vertex_sqrt = sqrt(m_detail[0]);
-    float begin_detail = 40.0f + fmin(40.0f / max_vertex_sqrt * m_size_estimation, 100.0f);
+    float begin_detail = 40.0f + fmin(80.0f / max_vertex_sqrt * m_size_estimation, 400.0f / m_detail.size());
 
     for(unsigned i = 0; i < m_detail.size(); i++)
     {
