@@ -67,7 +67,8 @@ private:
     bool m_current_level_dirty;
 
     // Area of the bounding box (for autoLOD computation)
-    float m_area;
+    float m_size_estimation;
+    float m_radius;
 
     bool m_update_box_every_frame;
     bool m_lod_distances_updated;

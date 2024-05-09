@@ -48,7 +48,8 @@ LODNode::LODNode(std::string group_name, scene::ISceneNode* parent,
     drop();
 
     m_forced_lod = -1;
-    m_area = 0;
+    m_size_estimation = 0;
+    m_radius = 0;
     m_current_level = -1;
     m_current_level_dirty = true;
     m_lod_distances_updated = false;
@@ -193,10 +194,7 @@ void LODNode::OnRegisterSceneNode()
 * @param scale The model's scale*/
 void LODNode::autoComputeLevel(float scale)
 {
-    m_area *= scale;
-
-    // Step 1 - We try to estimate how far away we need to draw
-    float max_draw = sqrt(m_area);
+    m_size_estimation *= scale;
 
     // Step 4 - Distance multiplier based on the user's input
     float aggressivity = 1.0;
@@ -218,16 +216,12 @@ void LODNode::autoComputeLevel(float scale)
     //          display distance
     // TODO - investigate a better division scheme
 
-    for(unsigned i = 0; i < m_detail.size(); i++)
-    {
-        m_detail[i] = max_draw + 120.0f + 600.0f / m_detail[i] * max_draw;
+    float max_vertex_sqrt = sqrt(m_detail[0]);
+    float begin_detail = 40.0f + fmin(40.0f / max_vertex_sqrt * m_size_estimation, 100.0f);
 
-        if (i && m_detail[i] - m_detail[i - 1] < 40)
-            m_detail[i] = m_detail[i - 1] + 40;
-    }
     for(unsigned i = 0; i < m_detail.size(); i++)
     {
-        m_detail[i] = aggressivity * m_detail[i];
+        m_detail[i] = m_radius + aggressivity * (80 + begin_detail * max_vertex_sqrt / sqrt(m_detail[i]));
         m_detail[i] = m_detail[i] * m_detail[i];
     }
 
@@ -243,8 +237,13 @@ void LODNode::autoComputeLevel(float scale)
 
 void LODNode::add(int level, scene::ISceneNode* node, bool reparent, bool autocompute)
 {
-    Box = node->getBoundingBox();
-    m_area = Box.getArea();
+    if (autocompute)
+    {
+        Box = node->getBoundingBox();
+        irr::core::vector3df extent = Box.getExtent();
+        m_size_estimation = fmax(sqrt(extent.X * extent.Z * 0.1f + (extent.X + extent.Z) * extent.Y), 10.0f);
+        m_radius = extent.getLength() / 2.0f;
+    }
 
     // samuncle suggested to put a slight randomisation in LOD
     // I'm not convinced (Auria) but he's the artist pro, so I listen ;P

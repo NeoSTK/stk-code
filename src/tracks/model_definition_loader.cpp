@@ -121,7 +121,7 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
                 {
                     vertex_count += a_mesh->getMeshBuffer(i)->getVertexCount();
                 }
-                lod_node->add(vertex_count, scene_node, true, true);
+                lod_node->add(2 * vertex_count, scene_node, true, true);
             }
             else
 #endif
