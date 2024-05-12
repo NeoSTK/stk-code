@@ -15,19 +15,11 @@ out vec4 Spec;
 #stk_include "utils/DiffuseIBL.frag"
 #stk_include "utils/SpecularIBL.frag"
 
-vec3 CalcViewPositionFromDepth(in vec2 uv)
-{
-    // Combine UV & depth into XY & Z (NDC)
-    float z = texture(dtex, uv).x;
-    return getPosFromUVDepth(vec3(uv, z), u_inverse_projection_matrix).xyz;
-}
 
-vec2 CalcCoordFromPosition(in vec3 pos)
+float distanceSquared(vec2 a, vec2 b)
 {
-    vec4 projectedCoord     = u_projection_matrix * vec4(pos, 1.0);
-    projectedCoord.xy      /= projectedCoord.w;
-    projectedCoord.xy       = projectedCoord.xy * 0.5 + 0.5;
-    return projectedCoord.xy;
+    a -= b;
+    return dot(a, a);
 }
 
 // Fade out edges of screen buffer tex
@@ -41,33 +33,97 @@ float GetEdgeFade(vec2 coords)
     return min(min(gradL, gradR), min(gradT, gradB));
 }
 
-vec2 RayCast(vec3 dir, vec3 hitCoord)
+vec2 RayCast(vec3 dir, vec3 hitCoord, out bool ishit)
 {
-    vec2 projectedCoord;
-    vec3 dirstep = dir * 0.5f;
-    float depth;
-    hitCoord += dirstep;
+    vec3 endCoord = hitCoord + dir * 10000.0f;
 
-    for (int i = 1; i <= 32; i++)
+    vec3 v0 = hitCoord;
+    vec3 v1 = endCoord;
+
+    vec4 h0 = vec4(v0, 1.0) * u_projection_matrix;
+    vec4 h1 = vec4(v1, 1.0) * u_projection_matrix;
+
+    float k0 = 1.0 / h0.w;
+    float k1 = 1.0 / h1.w;
+
+    vec3 q0 = v0 * k0;
+    vec3 q1 = v1 * k1;
+
+    vec2 p0 = (h0.xy * k0 + 1) / 2 * u_screen;
+    vec2 p1 = (h1.xy * k1 + 1) / 2 * u_screen;
+
+    p1 += vec2((distanceSquared(p0, p1) < 0.0001) ? 0.01 : 0.0);
+
+    vec2 delta = p1 - p0;
+
+    bool permute = false;
+    if (abs(delta.x) < abs(delta.y))
     {
-        projectedCoord          = CalcCoordFromPosition(hitCoord);
-
-        float depth             = CalcViewPositionFromDepth(projectedCoord).z;
-
-        float directionSign = sign(abs(hitCoord.z) - depth);
-        dirstep = dirstep * (1.0 - 0.5 * max(directionSign, 0.0));
-        hitCoord += dirstep * (-directionSign);
+        permute = true;
+        delta = delta.yx;
+        p0 = p0.yx;
+        p1 = p1.yx;
     }
 
-    if (projectedCoord.x > 0.0 && projectedCoord.x < 1.0 &&
-        projectedCoord.y > 0.0 && projectedCoord.y < 1.0)
+    float stepdir = sign(delta.x);
+    float invdx = stepdir / delta.x;
+    vec3 dq = (q1 - q0) * invdx;
+    float dk = (k1 - k0) * invdx;
+    vec2 dp = vec2(stepdir, delta.y * invdx);
+    float stride = 1.0;
+    float jitter = 1.0;
+
+    dp *= stride;
+    dq *= stride;
+    dk *= stride;
+
+    p0 += jitter * dp;
+    q0 += jitter * dq;
+    k0 += jitter * dk;
+
+    int curstep = 0;
+    int maxstep = 5000;
+    vec2 p = p0;
+    float k = k0;
+    vec3 q = q0;
+    float prevz = v0.z;
+    vec2 uv = vec2(0.0);
+    vec2 depths = vec2(prevz);
+
+    while (curstep < maxstep && p.x * stepdir < p1.x * stepdir)
     {
-        return projectedCoord.xy;
+        uv = permute ? 1 - p.yx / u_screen : 1 - p / u_screen;
+        depths.x = prevz;
+        depths.y = (dq.z * 0.5 + q.z) / (dk * 0.5 + k);
+        prevz = depths.y;
+        if (depths.x < depths.y);
+            depths.xy = depths.yx;
+        if (uv.x > u_screen.x || uv.y > u_screen.y || uv.x < 0 || uv.y < 0)
+            break;
+        float depth = getPosFromUVDepth(vec3(uv, texture(dtex, uv).x), u_inverse_projection_matrix).z;
+        ishit = depths.y < depth && depths.x > depth;
+        if (ishit)
+            break;
+        
+        p += dp;
+        q.z += dq.z;
+        k += dk;
+        curstep++;
     }
-    else
+    if (ishit)
     {
-        return vec2(0.f);
+        float l = 0, r = 1.0;
+        while (r - l > 1.0 / stride)
+        {
+            float mid = (l + r) * 0.5;
+            uv = permute ? 1 - (p.yx + dp.yx * mid) / u_screen : 1 - (p + dp * mid) / u_screen;
+            float depths = (dq.z * (mid - 0.5) + q.z) / (dk * (mid - 0.5) + k);
+            float depth = getPosFromUVDepth(vec3(uv, texture(dtex, uv).x), u_inverse_projection_matrix).z;
+            if (depth > depths) l = mid;
+            else r = mid;
+        }
     }
+    return uv;
 }
 
 // Main ===================================================================
@@ -75,7 +131,7 @@ vec2 RayCast(vec3 dir, vec3 hitCoord)
 void main(void)
 {
     vec2 uv = gl_FragCoord.xy / u_screen;
-    vec3 normal = DecodeNormal(texture(ntex, uv).xy);
+    vec3 normal = normalize(DecodeNormal(texture(ntex, uv).xy));
 
     Diff = vec4(0.25 * DiffuseIBL(normal), 1.);
 
@@ -101,14 +157,13 @@ void main(void)
     // otherwise just use specular IBL
     if (specval > 0.5)
     {
-        vec3 View_Pos               = CalcViewPositionFromDepth(uv);
-
         // Reflection vector
-        vec3 reflected              = reflect(-eyedir, normal);
+        vec3 reflected = reflect(-eyedir, normal);
+        bool ishit = false;
 
-        vec2 coords = RayCast(reflected, View_Pos);
+        vec2 coords = RayCast(reflected, xpos.xyz, ishit);
 
-        if (coords.x == 0.0 && coords.y == 0.0) {
+        if (!ishit) {
             outColor = fallback;
         } else {
             // FIXME We need to generate mipmap to take into account the gloss map
