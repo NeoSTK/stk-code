@@ -279,6 +279,7 @@ extern "C" {
 #include "states_screens/dialogs/message_dialog.hpp"
 #include "tips/tips_manager.hpp"
 #include "tracks/arena_graph.hpp"
+#include "tracks/lod_manager.hpp"
 #include "tracks/track.hpp"
 #include "tracks/track_manager.hpp"
 #include "utils/command_line.hpp"
@@ -1936,6 +1937,7 @@ void initRest()
     ReplayPlay::create();
     ReplayRecorder::create();
     material_manager        = new MaterialManager      ();
+    lod_manager             = new LODManager           ();
     track_manager           = new TrackManager         ();
     kart_properties_manager = new KartPropertiesManager();
     ProjectileManager::create();
@@ -2718,6 +2720,7 @@ static void cleanSuperTuxKart()
     if(powerup_manager)         delete powerup_manager;
     ProjectileManager::destroy();
     if(kart_properties_manager) delete kart_properties_manager;
+    if(lod_manager)             delete lod_manager;
     if(track_manager)           delete track_manager;
     if(material_manager)        delete material_manager;
     if(history)                 delete history;

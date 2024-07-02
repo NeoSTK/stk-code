@@ -42,12 +42,16 @@ namespace irr
     }
 }
 
+class LODManager;
+
 /**
  * \brief manages level-of-detail
  * \ingroup graphics
  */
 class LODNode : public scene::ISceneNode
 {
+    friend class LODManager;
+
 private:
     core::matrix4 RelativeTransformationMatrix;
     core::aabbox3d<f32> Box;
@@ -68,9 +72,6 @@ private:
 
     // Distance below which switching between two levels of detail is avoided
     int m_min_switch_distance;
-
-    // Area of the bounding box (for autoLOD computation)
-    float m_area;
 
     bool m_update_box_every_frame;
     bool m_lod_distances_updated;
@@ -104,11 +105,6 @@ public:
       * \param reparent If true, node will be removed from its current parent first
       */
     void add(int level, scene::ISceneNode* node, bool reparent);
-
-    /**
-      * This method can be used to automatically compute LoD level
-      */
-    void autoComputeLevel(float scale);
 
     void forceLevelOfDetail(int n);
 

@@ -74,6 +74,7 @@
 #include "states_screens/race_result_gui.hpp"
 #include "states_screens/state_manager.hpp"
 #include "tracks/check_manager.hpp"
+#include "tracks/lod_manager.hpp"
 #include "tracks/track.hpp"
 #include "tracks/track_manager.hpp"
 #include "tracks/track_object.hpp"
@@ -1133,6 +1134,7 @@ void World::updateGraphics(float dt)
 
     ProjectileManager::get()->updateGraphics(dt);
     Track::getCurrentTrack()->updateGraphics(dt);
+    lod_manager->autoComputeLevel();
 }   // updateGraphics
 
 //-----------------------------------------------------------------------------

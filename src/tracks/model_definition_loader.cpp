@@ -24,6 +24,7 @@ using namespace irr;
 #include "graphics/lod_node.hpp"
 #include "io/xml_node.hpp"
 #include "modes/world.hpp"
+#include "tracks/lod_manager.hpp"
 #include "tracks/track.hpp"
 
 #include <IAnimatedMeshSceneNode.h>
@@ -71,6 +72,7 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
     {
         scene::ISceneNode* actual_parent = (parent == NULL ? sm->getRootSceneNode() : parent);
         LODNode* lod_node = new LODNode(groupname, actual_parent, sm);
+        std::vector<int> all_triangle_count;
         lod_node->updateAbsolutePosition();
         for (unsigned int m=0; m<group.size(); m++)
         {
@@ -116,6 +118,13 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
 
                 Track::uploadNodeVertexBuffer(scene_node);
                 lod_node->add(group[m].m_distance, scene_node, true);
+
+                int triangle_count = 0;
+                for (int i = 0; i < a_mesh->getMeshBufferCount(); i++)
+                {
+                    triangle_count += a_mesh->getMeshBuffer(i)->getIndexCount() / 3;
+                }
+                all_triangle_count.push_back(triangle_count);
             }
             else
 #endif
@@ -141,6 +150,13 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
 
                 Track::uploadNodeVertexBuffer(scene_node);
                 lod_node->add(group[m].m_distance, scene_node, true);
+
+                int triangle_count = 0;
+                for (int i = 0; i < a_mesh->getMeshBufferCount(); i++)
+                {
+                    triangle_count += a_mesh->getMeshBuffer(i)->getIndexCount() / 3;
+                }
+                all_triangle_count.push_back(triangle_count);
             }
         }
         if (lod_node->getAllNodes().empty())
@@ -152,7 +168,7 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
         }
         vector3df scale = vector3df(1.f, 1.f, 1.f);
         node->get("scale", &scale);
-        lod_node->autoComputeLevel(scale.getLength());
+        lod_manager->registerNode(lod_node, all_triangle_count.data());
 
 #ifdef DEBUG
         std::string debug_name = groupname+" (LOD track-object)";

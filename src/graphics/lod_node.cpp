@@ -48,7 +48,6 @@ LODNode::LODNode(std::string group_name, scene::ISceneNode* parent,
     drop();
 
     m_forced_lod = -1;
-    m_area = 0;
     m_current_level = -1;
     m_current_level_dirty = true;
     m_lod_distances_updated = false;
@@ -73,7 +72,7 @@ int LODNode::getLevel()
         return -1;
 
     // If a level is forced, use it
-    if (m_forced_lod >- 1)
+    if (m_forced_lod > -1)
         return m_forced_lod;
     
     if (!m_current_level_dirty)
@@ -111,8 +110,8 @@ int LODNode::getLevel()
             return n;
         }
     }
-    m_current_level = -1;
-    return -1;
+    m_current_level = m_detail.size();
+    return m_detail.size();
 }  // getLevel
 
 // ---------------------------------------------------------------------------
@@ -121,7 +120,7 @@ int LODNode::getLevel()
  *  camera is activated, since it zooms in to the kart. */
 void LODNode::forceLevelOfDetail(int n)
 {
-    m_forced_lod = (n >=(int)m_detail.size()) ? (int)m_detail.size()-1 : n;
+    m_forced_lod = n;
 }   // forceLevelOfDetail
 
 // ----------------------------------------------------------------------------
@@ -185,7 +184,7 @@ void LODNode::OnRegisterSceneNode()
     {
         int level = getLevel();
         
-        if (level >= 0)
+        if (level < m_detail.size())
         {
             m_nodes[level]->OnRegisterSceneNode();
         }
@@ -197,92 +196,9 @@ void LODNode::OnRegisterSceneNode()
     } // if isVisible() && m_nodes.size() > 0
 }
 
-/* Each model with LoD has specific distances beyond which it is rendered at a lower 
-* detail level. This function compute the distances associated with the various
-* LoD levels for a given model.
-* @param scale The model's scale*/
-void LODNode::autoComputeLevel(float scale)
-{
-    m_area *= scale;
-
-    // We want to determine two things:
-    // 1.) beyond which distance the object should disappear entirely
-    // 2.) at which distances we should switch between a lower-quality model and a higher quality model,
-    //     if these distances are too low we stick to a lower-quality model
-    // To do so, we use a mix between a power 2 (quadratic) formula and a power 4 formula.
-
-    // Step 1a - compute the base formulas
-    float p2_component = 20.0f + 7.0f * sqrtf(m_area + 10);
-    float p4_component = 50.0f + 22.0f * sqrtf(sqrtf(m_area + 2));
-
-    // Step 1b - combine them
-    float p4_ratio = p4_component;
-    if (p4_component < 210.0f)
-        p4_ratio = p4_component / 220.0f;
-    else if (p4_component < 230.0f) // Smooth the transition
-        p4_ratio = (105.0f + p4_component * 0.5f) / 220.0f;
-    else
-        p4_ratio = 1.0f;
-
-    float max_draw = p4_ratio * p4_component + (1.0f - p4_ratio) * p2_component;
-
-    // Step 2a - Distance multiplier based on the user's input
-    float aggressivity = 1.0;
-    if(     UserConfigParams::m_geometry_level == 2) aggressivity = 1.0; // 2 in the params is the lowest setting
-    else if(UserConfigParams::m_geometry_level == 1) aggressivity = 1.42;
-    else if(UserConfigParams::m_geometry_level == 0) aggressivity = 2.0;
-    else if(UserConfigParams::m_geometry_level == 3) aggressivity = 2.84;
-    else if(UserConfigParams::m_geometry_level == 4) aggressivity = 4.0;
-    else if(UserConfigParams::m_geometry_level == 5) aggressivity = 5.7;
-
-    max_draw *= aggressivity;
-
-    // Step 2b - Determine the minimum distance for a model switch based on user input
-    float temp_switch_dist = max_draw;
-    if(     UserConfigParams::m_geometry_level == 2) temp_switch_dist *= 0.75f; // 2 in the params is the lowest setting
-    else if(UserConfigParams::m_geometry_level == 1) temp_switch_dist *= 0.55f;
-    else if(UserConfigParams::m_geometry_level == 0) temp_switch_dist *= 0.4f;
-    else if(UserConfigParams::m_geometry_level == 3) temp_switch_dist *= 0.3f;
-    else if(UserConfigParams::m_geometry_level == 4) temp_switch_dist *= 0.23f;
-    else if(UserConfigParams::m_geometry_level == 5) temp_switch_dist *= 0.18f;
-
-    temp_switch_dist = (temp_switch_dist + 100.0f) / 2.0f;
-
-    m_min_switch_distance = (int)temp_switch_dist;
-
-    // Step 3 - As it is faster to compute the squared distance than distance, at runtime
-    //          we compare the distance saved in the LoD node with the square of the distance
-    //          between the camera and the object. Therefore, we apply squaring here.
-    max_draw *= max_draw;
-    m_min_switch_distance *= m_min_switch_distance;
-
-    // Step 4 - Then we recompute the level of detail culling distance
-    //          If there are N levels of detail, the highest level
-    //          is displayed when under 1/Nth of the max display distance.
-    //          Other levels are spaced approximately at the geometrical mean points.
-    int step = (int) (max_draw) / m_detail.size();
-    int biais = m_detail.size();
-
-    for(unsigned i = 0; i < m_detail.size(); i++)
-    {
-        m_detail[i] = ((step / biais) * (i + 1));
-        biais--;
-    }
-
-    const size_t max_level = m_detail.size() - 1;
-
-    // Only animated mesh needs to be updated bounding box every frame,
-    // which only affects culling
-    m_update_box_every_frame =
-        m_nodes[max_level]->getType() == scene::ESNT_ANIMATED_MESH ||
-        m_nodes[max_level]->getType() == scene::ESNT_LOD_NODE;
-    Box = m_nodes[max_level]->getBoundingBox();
-}
-
 void LODNode::add(int level, scene::ISceneNode* node, bool reparent)
 {
     Box = node->getBoundingBox();
-    m_area = Box.getArea();
 
     // samuncle suggested to put a slight randomisation in LOD
     // I'm not convinced (Auria) but he's the artist pro, so I listen ;P

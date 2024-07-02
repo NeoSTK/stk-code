@@ -33,6 +33,7 @@
 #include "tracks/arena_graph.hpp"
 #include "tracks/drive_graph.hpp"
 #include "tracks/drive_node.hpp"
+#include "tracks/lod_manager.hpp"
 #include "utils/constants.hpp"
 #include "utils/string_utils.hpp"
 
@@ -236,20 +237,31 @@ Item::Item(ItemType type, const Vec3& xyz, const Vec3& normal,
             irr_driver->getSceneManager());
         scene::ISceneNode* meshnode =
             irr_driver->addMesh(mesh, StringUtils::insertValues("item_%i", (int)type));
+        std::vector<int> all_triangle_count;
 
         lodnode->add(1, meshnode, true);
+        int triangle_count = 0;
+        for (int i = 0; i < mesh->getMeshBufferCount(); i++)
+        {
+            triangle_count += mesh->getMeshBuffer(i)->getIndexCount() / 3;
+        }
+        all_triangle_count.push_back(triangle_count);
+
         if (lowres_mesh != NULL)
         {
             scene::ISceneNode* meshnode =
                 irr_driver->addMesh(lowres_mesh,
                 StringUtils::insertValues("item_lo_%i", (int)type));
             lodnode->add(2, meshnode, true);
+            int triangle_count = 0;
+            for (int i = 0; i < lowres_mesh->getMeshBufferCount(); i++)
+            {
+                triangle_count += lowres_mesh->getMeshBuffer(i)->getIndexCount() / 3;
+            }
+            all_triangle_count.push_back(triangle_count);
         }
 
-        // Auto-compute the rendering distance, but use a high scaling factor
-        // to ensure that even at low settings, on-track items only become invisible
-        // when already quite far.
-        lodnode->autoComputeLevel(24); // The distance grows with the square root of the scaling factor
+        lod_manager->registerNode(lodnode, all_triangle_count.data());
         m_node = lodnode;
     }
     setType(type);
