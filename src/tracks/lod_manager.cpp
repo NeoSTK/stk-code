@@ -47,6 +47,7 @@ void LODManager::registerNode(LODNode* node, float importance, int* children_tri
 void LODManager::autoComputeLevel()
 {
     float capacity = m_max_capacity;
+    capacity += OverallCapacityOffset;
 
     if(     UserConfigParams::m_geometry_level == 2) capacity *= 0.15f; // 2 in the params is the lowest setting
     else if(UserConfigParams::m_geometry_level == 1) capacity *= 0.3f;
@@ -82,6 +83,9 @@ void LODManager::autoComputeLevel()
             float bbox_area = 
                 m_lod_nodes[i]->getBoundingBox().getArea();
             value *= bbox_area / std::max(dist_squared, radius_squared);
+
+            // Distance Factor
+            value /= sqrtf(std::max(dist_squared, radius_squared));
 
             solver.pushItem(value, weight, i);
         }

@@ -43,6 +43,7 @@ private:
     int m_max_capacity;
 
     static const int ObjectCapacityOffset = 8;
+    static const int OverallCapacityOffset = 16384;
 
 public:
     // All children of this LODNode must have valid triangle count.
