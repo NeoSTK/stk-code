@@ -154,7 +154,7 @@ void DrawCalls::parseSceneManager(core::array<scene::ISceneNode*> &List,
             node->updateVisibility();
 
             core::array<scene::ISceneNode*> child;
-            if (node->getLevel() >= 0)
+            if (node->getLevel() < node->getAllNodes().size())
                 child.push_back(node->getAllNodes()[node->getLevel()]);
             for (unsigned int i = 0; i < node->getChildren().size(); i++)
             {

@@ -36,6 +36,8 @@ private:
 
     std::vector<LODNode*> m_lod_nodes;
 
+    std::vector<float> m_importance;
+
     std::vector<std::vector<int> > m_children_triangle_count;
 
     int m_max_capacity;
@@ -44,7 +46,7 @@ private:
 
 public:
     // All children of this LODNode must have valid triangle count.
-    void registerNode(LODNode* node, int *children_triangle_count);
+    void registerNode(LODNode* node, float importance, int *children_triangle_count);
 
     void autoComputeLevel();
 

@@ -261,7 +261,7 @@ Item::Item(ItemType type, const Vec3& xyz, const Vec3& normal,
             all_triangle_count.push_back(triangle_count);
         }
 
-        lod_manager->registerNode(lodnode, all_triangle_count.data());
+        lod_manager->registerNode(lodnode, 12.0f, all_triangle_count.data());
         m_node = lodnode;
     }
     setType(type);

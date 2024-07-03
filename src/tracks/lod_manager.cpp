@@ -28,9 +28,10 @@
 LODManager *lod_manager = NULL;
 
 //-----------------------------------------------------------------------------
-void LODManager::registerNode(LODNode* node, int* children_triangle_count)
+void LODManager::registerNode(LODNode* node, float importance, int* children_triangle_count)
 {
     m_lod_nodes.push_back(node);
+    m_importance.push_back(importance);
 
     m_children_triangle_count.push_back(std::vector<int>());
     m_children_triangle_count.back().resize(node->getAllNodes().size());
@@ -70,16 +71,21 @@ void LODManager::autoComputeLevel()
             // Model Accuracy Factor
             value *= std::max(0.0f, 1.0f - 1.0f / m_children_triangle_count[i][j]);
 
+            // Importance Factor
+            value *= m_importance[i];
+
             // Projection Size Factor
-            float squared_dist =
+            float radius_squared =
+                m_lod_nodes[i]->getBoundingBox().getExtent().getLengthSQ() / 4.0f;
+            float dist_squared =
                 m_lod_nodes[i]->getAbsolutePosition().getDistanceFromSQ(pos.toIrrVector());
             float bbox_area = 
                 m_lod_nodes[i]->getBoundingBox().getArea();
-            value *= bbox_area / squared_dist;
+            value *= bbox_area / std::max(dist_squared, radius_squared);
 
             solver.pushItem(value, weight, i);
         }
-        solver.pushItem(0.0f, 0.0f, m_lod_nodes[i]->getAllNodes().size()); // Empty level
+        solver.pushItem(0.0f, 0.0f, i); // Empty level
     }
     solver.solve();
 
@@ -93,5 +99,6 @@ void LODManager::autoComputeLevel()
 void LODManager::clear()
 {
     m_lod_nodes.clear();
+    m_importance.clear();
     m_children_triangle_count.clear();
 }

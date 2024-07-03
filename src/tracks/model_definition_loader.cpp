@@ -168,7 +168,7 @@ LODNode* ModelDefinitionLoader::instanciateAsLOD(const XMLNode* node, scene::ISc
         }
         vector3df scale = vector3df(1.f, 1.f, 1.f);
         node->get("scale", &scale);
-        lod_manager->registerNode(lod_node, all_triangle_count.data());
+        lod_manager->registerNode(lod_node, 1.0f, all_triangle_count.data());
 
 #ifdef DEBUG
         std::string debug_name = groupname+" (LOD track-object)";

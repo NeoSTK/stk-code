@@ -74,6 +74,7 @@
 #include "tracks/check_structure.hpp"
 #include "tracks/drive_graph.hpp"
 #include "tracks/drive_node.hpp"
+#include "tracks/lod_manager.hpp"
 #include "tracks/model_definition_loader.hpp"
 #include "tracks/track_manager.hpp"
 #include "tracks/track_object_manager.hpp"
@@ -440,6 +441,8 @@ void Track::cleanup()
         // remove temporary materials loaded by the material manager
         material_manager->popTempMaterial();
     }
+
+    lod_manager->clear();
 
 #ifndef SERVER_ONLY
     irr_driver->clearGlowingNodes();
@@ -1659,6 +1662,7 @@ void Track::updateGraphics(float dt)
         m_animated_textures[i]->update(dt);
     }
     m_item_manager->updateGraphics(dt);
+    lod_manager->autoComputeLevel();
 
 }   // updateGraphics
 
