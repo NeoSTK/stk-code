@@ -23,9 +23,43 @@
 #include "graphics/camera/camera.hpp"
 #include "utils/mckp_solver.hpp"
 
+#include "ICameraSceneNode.h"
 #include "IMeshBuffer.h"
+#include "SViewFrustum.h"
 
 LODManager *lod_manager = NULL;
+
+bool isBoxInFrontOfPlane(const core::plane3df &plane,
+                        const core::vector3df* edges)
+{
+    for (u32 i = 0; i < 8; i++)
+    {
+        if (plane.classifyPointRelation(edges[i]) != core::ISREL3D_FRONT)
+            return false;
+    }
+    return true;
+}   // isBoxInFrontOfPlane
+
+bool isCulledPrecise(const scene::ICameraSceneNode *cam,
+                    const scene::ISceneNode* node)
+{
+    const core::matrix4 &trans = node->getAbsoluteTransformation();
+    core::vector3df edges[8];
+    node->getBoundingBox().getEdges(edges);
+    for (unsigned i = 0; i < 8; i++)
+        trans.transformVect(edges[i]);
+
+    const scene::SViewFrustum &frust = *cam->getViewFrustum();
+    for (s32 i = 0; i < scene::SViewFrustum::VF_PLANE_COUNT; i++)
+    {
+        if (isBoxInFrontOfPlane(frust.planes[i], edges))
+        {
+            return true;
+        }
+    }
+    return false;
+
+}   // isCulledPrecise
 
 //-----------------------------------------------------------------------------
 void LODManager::registerNode(LODNode* node, float importance, int* children_triangle_count)
@@ -65,6 +99,17 @@ void LODManager::autoComputeLevel()
 
     for (int i = 0; i < m_lod_nodes.size(); i++)
     {
+        float importance = m_importance[i];
+        float radius_squared =
+            m_lod_nodes[i]->getBoundingBox().getExtent().getLengthSQ() / 4.0f;
+        float dist_squared =
+            m_lod_nodes[i]->getAbsolutePosition().getDistanceFromSQ(pos.toIrrVector());
+        float real_dist_squared =
+            std::max(dist_squared, radius_squared);
+        float bbox_area = 
+            m_lod_nodes[i]->getBoundingBox().getArea();
+        float real_dist = sqrtf(real_dist_squared);
+        
         for (int j = 0; j < m_lod_nodes[i]->getAllNodes().size(); j++)
         {
             float value = 1.0f, weight = m_children_triangle_count[i][j] + ObjectCapacityOffset;
@@ -73,23 +118,30 @@ void LODManager::autoComputeLevel()
             value *= std::max(0.0f, 1.0f - 1.0f / m_children_triangle_count[i][j]);
 
             // Importance Factor
-            value *= m_importance[i];
+            value *= importance;
 
             // Projection Size Factor
-            float radius_squared =
-                m_lod_nodes[i]->getBoundingBox().getExtent().getLengthSQ() / 4.0f;
-            float dist_squared =
-                m_lod_nodes[i]->getAbsolutePosition().getDistanceFromSQ(pos.toIrrVector());
-            float bbox_area = 
-                m_lod_nodes[i]->getBoundingBox().getArea();
-            value *= bbox_area / std::max(dist_squared, radius_squared);
+            value *= bbox_area / real_dist_squared;
 
             // Distance Factor
-            value /= sqrtf(std::max(dist_squared, radius_squared));
+            value /= real_dist;
+
+            // Hysteresis Offset
+            if (j == m_lod_nodes[i]->getLevel() && !isCulledPrecise(camera->getCameraSceneNode(), m_lod_nodes[i]))
+            {
+                value += 0.2f * bbox_area / real_dist_squared / real_dist / importance;
+            }
 
             solver.pushItem(value, weight, i);
         }
-        solver.pushItem(0.0f, 0.0f, i); // Empty level
+        float value = 0.0f;
+        // Hysteresis Offset
+        if (m_lod_nodes[i]->getAllNodes().size() == m_lod_nodes[i]->getLevel() && !isCulledPrecise(camera->getCameraSceneNode(), m_lod_nodes[i]))
+        {
+            value += 1.0f * bbox_area / real_dist_squared / real_dist / importance;
+        }
+        
+        solver.pushItem(value, 0.0f, i); // Empty level
     }
     solver.solve();
 
@@ -105,4 +157,5 @@ void LODManager::clear()
     m_lod_nodes.clear();
     m_importance.clear();
     m_children_triangle_count.clear();
+    m_max_capacity = 0;
 }

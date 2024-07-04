@@ -23,7 +23,6 @@
 
 const float Epsilon = 1e-6;
 
-
 MCKPSolver::MCKPSolver(float capacity, int group_count) : m_capacity(capacity)
 {
     m_all_items.resize(group_count);
@@ -38,6 +37,8 @@ MCKPSolver::MCKPSolver(float capacity, int group_count) : m_capacity(capacity)
 int MCKPSolver::pushItem(float value, float weight, int group)
 {
     assert(group < m_all_items.size());
+    
+    if (weight > m_capacity) return -1;
 
     m_all_items[group].push_back(std::make_pair(value, weight));
     return m_all_items[group].size() - 1;
@@ -80,7 +81,6 @@ void MCKPSolver::solve()
                 {
                     std::swap(a, b);
                     std::swap(all_items[i][ia], all_items[i][ib]);
-                    std::swap(ia, ib);
                 }
                 if (m_all_items[i][a].first >= m_all_items[i][b].first)
                 {
