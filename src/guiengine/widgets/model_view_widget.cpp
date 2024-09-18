@@ -282,16 +282,20 @@ void ModelViewWidget::setupRTTScene()
             //Log::info("ModelViewWidget", "Set frame %d", m_model_frames[n]);
         }
     }
+    irr::video::SColor ambient = Skin::getColor("brighttext::neutral");
+    ambient.setRed(ambient.getRed() / 5 + 30);
+    ambient.setGreen(ambient.getGreen() / 5 + 30);
+    ambient.setBlue(ambient.getBlue() / 5 + 30);
 
-    irr_driver->setAmbientLight(video::SColor(255, 35, 35, 35));
+    irr_driver->setAmbientLight(ambient);
 
     const core::vector3df &spot_pos = core::vector3df(0, 30, 40);
 
     if (!CVS->isGLSL())
     {
         scene::ILightSceneNode* light = irr_driver->getSceneManager()
-            ->addLightSceneNode(NULL, spot_pos, video::SColorf(1.0f,1.0f,1.0f),
-                                1600 /* radius */);
+            ->addLightSceneNode(NULL, spot_pos, Skin::getColor("brighttext::neutral"),
+                                10 /* radius */);
         light->setLightType(video::ELT_SPOT);
         light->setRotation((core::vector3df(0, 10, 0) - spot_pos).getHorizontalAngle());
         light->updateAbsolutePosition();

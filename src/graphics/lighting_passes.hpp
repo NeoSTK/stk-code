@@ -46,6 +46,7 @@ private:
 
     void renderEnvMap(GLuint normal_depth_texture,
                       GLuint depth_stencil_texture,
+                      GLuint color,
                       GLuint specular_probe,
                       GLuint albedo_buffer);
 
@@ -53,7 +54,8 @@ private:
     void         renderSunlight(const core::vector3df &direction,
                                 const video::SColorf &col,
                                 GLuint normal_depth_texture,
-                                GLuint depth_stencil_texture);
+                                GLuint depth_stencil_texture,
+                                GLuint color);
 
 public:
     LightingPasses(): m_point_light_count(0){}
@@ -64,6 +66,7 @@ public:
                         GLuint normal_depth_texture,
                         GLuint depth_stencil_texture,
                         GLuint albedo_texture,
+                        GLuint color,
                         const FrameBuffer* shadow_framebuffer,
                         GLuint specular_probe);
     void renderLightsScatter(GLuint depth_stencil_texture,

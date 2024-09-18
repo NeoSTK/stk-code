@@ -4,6 +4,7 @@ uniform highp sampler2D dtex;
 #else
 uniform sampler2D dtex;
 #endif
+uniform sampler2D ctex;
 uniform sampler2DArrayShadow shadowtex;
 
 uniform float split0;
@@ -89,18 +90,22 @@ void main() {
     vec4 xpos = getPosFromUVDepth(vec3(uv, z), u_inverse_projection_matrix);
 
     vec3 norm = DecodeNormal(texture(ntex, uv).xy);
-    float roughness =texture(ntex, uv).z;
+    float roughness = 1.0 - texture(ntex, uv).z;
+    float metallic = texture(ntex, uv).w;
     vec3 eyedir = -normalize(xpos.xyz);
 
     vec3 Lightdir = SunMRP(norm, eyedir);
     float NdotL = clamp(dot(norm, Lightdir), 0., 1.);
 
-    vec3 Specular = SpecularBRDF(norm, eyedir, Lightdir, vec3(1.), roughness);
-    vec3 Diffuse = DiffuseBRDF(norm, eyedir, Lightdir, vec3(1.), roughness);
+    vec3 base_color = texture(ctex, uv).xyz;
+    vec3 diffuse_color = (1.0 - metallic) * base_color;
+
+    vec3 Specular = SpecularBRDF(norm, eyedir, Lightdir, base_color, roughness, metallic);
+    vec3 Diffuse = DiffuseBRDF(norm, eyedir, Lightdir, diffuse_color, roughness);
 
     // Shadows
     float factor;
-    float bias = max(1.0 - NdotL, .2) / shadow_res;
+    float bias = 0.2 / shadow_res;
     if (xpos.z < split0) {
         factor = getShadowFactor(xpos.xyz, 0, bias);
         if (xpos.z > blend_start(split0)) {
@@ -125,6 +130,6 @@ void main() {
         factor = 1.;
     }
 
-    Diff = vec4(factor * NdotL * Diffuse * sun_color, 1.);
-    Spec = vec4(factor * NdotL * Specular * sun_color, 1.);
+    Diff = vec4(factor * sun_color * NdotL * Diffuse, 1.);
+    Spec = vec4(factor * sun_color * NdotL * Specular, 1.);
 }

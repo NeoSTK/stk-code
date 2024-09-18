@@ -1,38 +1,23 @@
-// From "An Efficient Representation for Irradiance Environment Maps" article
-// See http://graphics.stanford.edu/papers/envmap/
-// Coefficients are calculated in IBL.cpp
-
-mat4 getMatrix(float L00, float L1m1, float L10, float L11, float L2m2, float L2m1, float L20, float L21, float L22)
+// From Bevy
+vec2 F_AB(float perceptual_roughness, float NdotV) 
 {
-    float c1 = 0.429043, c2 = 0.511664, c3 = 0.743125, c4 = 0.886227, c5 = 0.247708;
-
-    return mat4(
-        c1 * L22, c1 * L2m2, c1 * L21, c2 * L11,
-        c1 * L2m2, - c1 * L22, c1 * L2m1, c2 * L1m1,
-        c1 * L21, c1 * L2m1, c3 * L20, c2 * L10,
-        c2 * L11, c2 * L1m1, c2 * L10, c4 * L00 - c5 * L20
-    );
+    vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+    vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+    vec4 r = perceptual_roughness * c0 + c1;
+    float a004 = min(r.x * r.x, pow(2.0, -9.28 * NdotV)) * r.x + r.y;
+    return vec2(-1.04, 1.04) * a004 + r.zw;
 }
 
-vec3 DiffuseIBL(vec3 normal)
+vec3 EnvBRDFApprox(vec3 F0, vec2 F_ab)
 {
-    // Convert normal in wobLd space (where SH coordinates were computed)
-    vec4 extendednormal = transpose(u_view_matrix) * vec4(normal, 0.);
-    extendednormal.w = 1.;
+    return F0 * F_ab.x + F_ab.y;
+}
 
-#ifdef UBO_DISABLED
-    mat4 rmat = getMatrix(redLmn[0], redLmn[1], redLmn[2], redLmn[3], redLmn[4], redLmn[5], redLmn[6], redLmn[7], redLmn[8]);
-    mat4 gmat = getMatrix(greenLmn[0], greenLmn[1], greenLmn[2], greenLmn[3], greenLmn[4], greenLmn[5], greenLmn[6], greenLmn[7], greenLmn[8]);
-    mat4 bmat = getMatrix(blueLmn[0], blueLmn[1], blueLmn[2], blueLmn[3], blueLmn[4], blueLmn[5], blueLmn[6], blueLmn[7], blueLmn[8]);
-#else
-    mat4 rmat = getMatrix(rL00, rL1m1, rL10, rL11, rL2m2, rL2m1, rL20, rL21, rL22);
-    mat4 gmat = getMatrix(gL00, gL1m1, gL10, gL11, gL2m2, gL2m1, gL20, gL21, gL22);
-    mat4 bmat = getMatrix(bL00, bL1m1, bL10, bL11, bL2m2, bL2m1, bL20, bL21, bL22);
-#endif
+vec3 DiffuseIBL(vec3 normal, vec3 eyedir, vec3 color, float roughness)
+{
+    float NdotV = max(dot(normal, eyedir), 0.0001);
 
-    float r = dot(extendednormal, rmat * extendednormal);
-    float g = dot(extendednormal, gmat * extendednormal);
-    float b = dot(extendednormal, bmat * extendednormal);
+    vec3 diffuse_ambient = EnvBRDFApprox(color, F_AB(1.0, NdotV));
 
-    return max(vec3(r, g, b), vec3(0.));
+    return diffuse_ambient;
 }

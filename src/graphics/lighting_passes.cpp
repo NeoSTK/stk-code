@@ -60,7 +60,7 @@ const unsigned int LightBaseClass::MAXLIGHT;
 LightBaseClass::PointLightInfo m_point_lights_info[LightBaseClass::MAXLIGHT];
 
 // ============================================================================
-class PointLightShader : public TextureShader < PointLightShader, 2 >
+class PointLightShader : public TextureShader < PointLightShader, 3 >
 {
 public:
     GLuint vbo;
@@ -72,7 +72,8 @@ public:
 
         assignUniforms();
         assignSamplerNames(0, "ntex", ST_NEAREST_FILTERED,
-                           1, "dtex", ST_NEAREST_FILTERED);
+                           1, "dtex", ST_NEAREST_FILTERED,
+                           2, "ctex", ST_NEAREST_FILTERED);
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
@@ -170,37 +171,40 @@ public:
 };
 
 // ============================================================================
-class IBLShader : public TextureShader<IBLShader, 4>
+class IBLShader : public TextureShader<IBLShader, 5, video::SColorf>
 {
 public:
     IBLShader()
     {
         loadProgram(OBJECT, GL_VERTEX_SHADER, "screenquad.vert",
                             GL_FRAGMENT_SHADER, "IBL.frag");
-        assignUniforms();
         assignSamplerNames(0, "ntex",  ST_NEAREST_FILTERED,
                            1, "dtex",  ST_NEAREST_FILTERED,
-                           2, "probe", ST_TRILINEAR_CUBEMAP,
-                           3, "albedo",ST_NEAREST_FILTERED);
+                           2, "ctex",  ST_NEAREST_FILTERED,
+                           3, "albedo",ST_NEAREST_FILTERED,
+                           4, "probe", ST_TRILINEAR_CUBEMAP);
+        assignUniforms("ambient_color");
     }   // IBLShader
 };   // IBLShader
 
 // ============================================================================
-class DegradedIBLShader : public TextureShader<DegradedIBLShader, 1>
+class DegradedIBLShader : public TextureShader<DegradedIBLShader, 3, video::SColorf>
 {
 public:
     DegradedIBLShader()
     {
         loadProgram(OBJECT, GL_VERTEX_SHADER, "screenquad.vert",
                             GL_FRAGMENT_SHADER, "degraded_ibl.frag");
-        assignUniforms();
-        assignSamplerNames(0, "ntex", ST_NEAREST_FILTERED);
+        assignSamplerNames(0, "ntex", ST_NEAREST_FILTERED,
+                           1, "dtex", ST_NEAREST_FILTERED,
+                           2, "ctex", ST_NEAREST_FILTERED);
+        assignUniforms("ambient_color");
     }   // DegradedIBLShader
 };   // DegradedIBLShader
 
 // ============================================================================
 class ShadowedSunLightShaderPCF : public TextureShader<ShadowedSunLightShaderPCF,
-                                                       3,  float, float, float,
+                                                       4,  float, float, float,
                                                        float, float, float,
                                                        core::vector3df, video::SColorf>
 {
@@ -213,6 +217,7 @@ public:
         // Use 8 to circumvent a catalyst bug when binding sampler
         assignSamplerNames(0, "ntex", ST_NEAREST_FILTERED,
                            1, "dtex", ST_NEAREST_FILTERED,
+                           2, "ctex", ST_NEAREST_FILTERED,
                            8, "shadowtex", ST_SHADOW_SAMPLER);
         assignUniforms("split0", "split1", "split2", "splitmax", "shadow_res",
             "overlap_proportion", "sundirection", "sun_color");
@@ -220,12 +225,14 @@ public:
     // ------------------------------------------------------------------------
     void render(GLuint normal_depth_texture,
                 GLuint depth_stencil_texture,
+                GLuint color,
                 const FrameBuffer* shadow_framebuffer,
                 const core::vector3df &direction,
                 const video::SColorf &col)
     {
         setTextureUnits(normal_depth_texture,
                         depth_stencil_texture,
+                        color,
                         shadow_framebuffer->getDepthTexture()                );
        drawFullScreenEffect(ShadowMatrices::m_shadow_split[1],
                             ShadowMatrices::m_shadow_split[2],
@@ -239,7 +246,7 @@ public:
 };   // ShadowedSunLightShaderPCF
 
 // ============================================================================
-class SunLightShader : public TextureShader<SunLightShader, 2,
+class SunLightShader : public TextureShader<SunLightShader, 3,
                                             core::vector3df, video::SColorf>
 {
 public:
@@ -249,20 +256,22 @@ public:
                             GL_FRAGMENT_SHADER, "sunlight.frag");
 
         assignSamplerNames(0, "ntex", ST_NEAREST_FILTERED,
-                           1, "dtex", ST_NEAREST_FILTERED);
+                           1, "dtex", ST_NEAREST_FILTERED,
+                           2, "ctex", ST_NEAREST_FILTERED);
         assignUniforms("sundirection", "sun_color");
     }   // SunLightShader
     // ------------------------------------------------------------------------
     void render(const core::vector3df &direction, const video::SColorf &col,
                 GLuint normal_depth_texture,
-                GLuint depth_stencil_texture)
+                GLuint depth_stencil_texture,
+                GLuint color)
     {
         glEnable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
         glBlendFunc(GL_ONE, GL_ONE);
         glBlendEquation(GL_FUNC_ADD);
 
-        setTextureUnits(normal_depth_texture, depth_stencil_texture);
+        setTextureUnits(normal_depth_texture, depth_stencil_texture, color);
         drawFullScreenEffect(direction, col);
     }   // render
 };   // SunLightShader
@@ -270,7 +279,8 @@ public:
 // ============================================================================
 static void renderPointLights(unsigned count,
                               GLuint normal_depth_rander_target,
-                              GLuint depth_stencil_texture)
+                              GLuint depth_stencil_texture,
+                              GLuint color)
 {
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
@@ -288,7 +298,8 @@ static void renderPointLights(unsigned count,
     glBindVertexArray(PointLightShader::getInstance()->vao);
     PointLightShader::getInstance()->setTextureUnits(
         normal_depth_rander_target,
-        depth_stencil_texture);
+        depth_stencil_texture,
+        color);
     PointLightShader::getInstance()->setUniforms();
 
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count);
@@ -297,6 +308,7 @@ static void renderPointLights(unsigned count,
 // ----------------------------------------------------------------------------
 void LightingPasses::renderEnvMap(GLuint normal_depth_texture,
                                   GLuint depth_stencil_texture,
+                                  GLuint color,
                                   GLuint specular_probe,
                                   GLuint albedo_buffer)
 {
@@ -310,9 +322,11 @@ void LightingPasses::renderEnvMap(GLuint normal_depth_texture,
         DegradedIBLShader::getInstance()->use();
         glBindVertexArray(SharedGPUObjects::getFullScreenQuadVAO());
 
-        DegradedIBLShader::getInstance()
-            ->setTextureUnits(normal_depth_texture);
-        DegradedIBLShader::getInstance()->setUniforms();
+        DegradedIBLShader::getInstance()->setTextureUnits(
+            normal_depth_texture,
+            depth_stencil_texture,
+            color);
+        DegradedIBLShader::getInstance()->setUniforms(irr_driver->getAmbientLight());
     }
     else
     {
@@ -322,9 +336,10 @@ void LightingPasses::renderEnvMap(GLuint normal_depth_texture,
         IBLShader::getInstance()->setTextureUnits(
             normal_depth_texture,
             depth_stencil_texture,
-            specular_probe,
-            albedo_buffer);
-        IBLShader::getInstance()->setUniforms();
+            color,
+            albedo_buffer,
+            specular_probe);
+        IBLShader::getInstance()->setUniforms(irr_driver->getAmbientLight());
     }
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -339,11 +354,13 @@ void LightingPasses::renderEnvMap(GLuint normal_depth_texture,
 void LightingPasses::renderSunlight(const core::vector3df &direction,
                                     const video::SColorf &col,
                                     GLuint normal_depth_texture,
-                                    GLuint depth_stencil_texture)
+                                    GLuint depth_stencil_texture,
+                                    GLuint color)
 {
     SunLightShader::getInstance()->render(direction, col,
                                           normal_depth_texture,
-                                          depth_stencil_texture);
+                                          depth_stencil_texture,
+                                          color);
 }   // renderSunlight
 
 
@@ -433,6 +450,7 @@ void LightingPasses::renderLights(  bool has_shadow,
                                     GLuint normal_depth_texture,
                                     GLuint depth_stencil_texture,
                                     GLuint albedo_texture,
+                                    GLuint color,
                                     const FrameBuffer* shadow_framebuffer,
                                     GLuint specular_probe)
 {
@@ -440,6 +458,7 @@ void LightingPasses::renderLights(  bool has_shadow,
         ScopedGPUTimer timer(irr_driver->getGPUTimer(Q_ENVMAP));
         renderEnvMap(normal_depth_texture,
                      depth_stencil_texture,
+                     color,
                      specular_probe,
                      albedo_texture);
     }
@@ -457,6 +476,7 @@ void LightingPasses::renderLights(  bool has_shadow,
             glBlendEquation(GL_FUNC_ADD);
             ShadowedSunLightShaderPCF::getInstance()->render(normal_depth_texture,
                                                              depth_stencil_texture,
+                                                             color,
                                                              shadow_framebuffer,
                                                              irr_driver->getSunDirection(),
                                                              irr_driver->getSunColor());
@@ -465,7 +485,8 @@ void LightingPasses::renderLights(  bool has_shadow,
             renderSunlight(irr_driver->getSunDirection(),
                            irr_driver->getSunColor(),
                            normal_depth_texture,
-                           depth_stencil_texture);
+                           depth_stencil_texture,
+                           color);
     }
 
     //points lights
@@ -473,7 +494,8 @@ void LightingPasses::renderLights(  bool has_shadow,
         ScopedGPUTimer timer(irr_driver->getGPUTimer(Q_POINTLIGHTS));
         renderPointLights(std::min(m_point_light_count, LightBaseClass::MAXLIGHT),
                           normal_depth_texture,
-                          depth_stencil_texture);
+                          depth_stencil_texture,
+                          color);
     }
 }   // renderLights
 

@@ -4,6 +4,7 @@ uniform highp sampler2D dtex;
 #else
 uniform sampler2D dtex;
 #endif
+uniform sampler2D ctex;
 
 flat in vec3 center;
 flat in float energy;
@@ -28,7 +29,8 @@ void main()
     vec2 texc = gl_FragCoord.xy / u_screen;
     float z = texture(dtex, texc).x;
     vec3 norm = DecodeNormal(texture(ntex, texc).xy);
-    float roughness = texture(ntex, texc).z;
+    float roughness = 1.0 - texture(ntex, texc).z;
+    float metallic = texture(ntex, texc).w;
 
     vec4 xpos = getPosFromUVDepth(vec3(texc, z), u_inverse_projection_matrix);
     vec3 eyedir = -normalize(xpos.xyz);
@@ -36,19 +38,26 @@ void main()
     vec4 pseudocenter = u_view_matrix * vec4(center.xyz, 1.0);
     pseudocenter /= pseudocenter.w;
     vec3 light_pos = pseudocenter.xyz;
-    vec3 light_col = col.xyz;
-    float d = distance(light_pos, xpos.xyz);
-    float att = energy * 20. / (1. + d * d);
-    att *= (radius - d) / radius;
+    vec3 light_col = col.xyz * energy;
+    vec3 light_to_frag = light_pos - xpos.xyz;
+    float d2 = dot(light_to_frag, light_to_frag);
+
+    float inv_range_square = 1 / radius / radius;
+    float factor = d2 * inv_range_square;
+    float smoothFactor = clamp(1.0 - factor * factor, 0.0, 1.0);
+    float att = smoothFactor * smoothFactor * 1.0 / max(d2, 0.0001);
     if (att <= 0.) discard;
 
     // Light Direction
     vec3 L = -normalize(xpos.xyz - light_pos);
 
-    float NdotL = clamp(dot(norm, L), 0., 1.);
-    vec3 Specular = SpecularBRDF(norm, eyedir, L, vec3(1.), roughness);
-    vec3 Diffuse = DiffuseBRDF(norm, eyedir, L, vec3(1.), roughness);
+    vec3 base_color = texture(ctex, texc).xyz;
+    vec3 diffuse_color = (1.0 - metallic) * base_color;
 
-    Diff = vec4(Diffuse * NdotL * light_col * att, 1.);
-    Spec = vec4(Specular * NdotL * light_col * att, 1.);
+    float NdotL = clamp(dot(norm, L), 0., 1.);
+    vec3 Specular = SpecularBRDF(norm, eyedir, L, base_color, roughness, metallic);
+    vec3 Diffuse = DiffuseBRDF(norm, eyedir, L, diffuse_color, roughness);
+
+    Diff = vec4(light_col * Diffuse * NdotL * att, 1.);
+    Spec = vec4(light_col * Specular * NdotL * att, 1.);
 }

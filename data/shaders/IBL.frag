@@ -1,6 +1,13 @@
 uniform sampler2D ntex;
+#if defined(GL_ES) && defined(GL_FRAGMENT_PRECISION_HIGH)
+uniform highp sampler2D dtex;
+#else
 uniform sampler2D dtex;
+#endif
+uniform sampler2D ctex;
 uniform sampler2D albedo;
+
+uniform vec3 ambient_color;
 
 #ifdef GL_ES
 layout (location = 0) out vec4 Diff;
@@ -77,17 +84,21 @@ void main(void)
     vec2 uv = gl_FragCoord.xy / u_screen;
     vec3 normal = DecodeNormal(texture(ntex, uv).xy);
 
-    Diff = vec4(0.25 * DiffuseIBL(normal), 1.);
-
     float z = texture(dtex, uv).x;
 
     vec4 xpos = getPosFromUVDepth(vec3(uv, z), u_inverse_projection_matrix);
     vec3 eyedir = -normalize(xpos.xyz);
     // Extract roughness
     float specval = texture(ntex, uv).z;
+    float metallic = texture(ntex, uv).w;
+
+    vec3 base_color = texture(ctex, uv).xyz;
+    vec3 diffuse_color = (1.0 - metallic) * base_color;
+
+    Diff = vec4(DiffuseIBL(normal, eyedir, diffuse_color, 1.0 - specval) * ambient_color, 1.);
 
 #ifdef GL_ES
-    Spec = vec4(.25 * SpecularIBL(normal, eyedir, specval), 1.);
+    Spec = vec4(SpecularIBL(normal, eyedir, base_color, 1.0 - specval, metallic), 1.);
 #else
     // :::::::: Compute Space Screen Reflection ::::::::::::::::::::::::::::::::::::
 
@@ -95,7 +106,7 @@ void main(void)
     vec3 outColor;
 
     // Fallback (if the ray can't find an intersection we display the sky)
-    vec3 fallback = .25 * SpecularIBL(normal, eyedir, specval);
+    vec3 fallback = SpecularIBL(normal, eyedir, base_color, 1.0 - specval, metallic);
 
     // Only calculate reflections if the reflectivity value is high enough,
     // otherwise just use specular IBL
@@ -110,7 +121,7 @@ void main(void)
             outColor = fallback;
         } else {
             // FIXME We need to generate mipmap to take into account the gloss map
-            outColor = textureLod(albedo, coords, 0.f).rgb;
+            outColor = textureLod(albedo, coords, 0.f).rgb * base_color;
             outColor = mix(fallback, outColor, GetEdgeFade(coords));
             // TODO temporary measure the lack of mipmapping for RTT albedo
             // Implement it in proper way
@@ -123,7 +134,7 @@ void main(void)
         outColor = fallback;
     }
 
-    Spec = vec4(outColor.rgb, 1.0);
+    Spec = vec4(outColor.rgb * ambient_color, 1.0);
 #endif
 
 }

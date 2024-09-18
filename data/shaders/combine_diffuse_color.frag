@@ -14,7 +14,10 @@ uniform vec4 bg_color;
 
 out vec4 o_final_color;
 
+#stk_include "utils/decodeNormal.frag"
 #stk_include "utils/getPosFromUVDepth.frag"
+#stk_include "utils/DiffuseIBL.frag"
+#stk_include "utils/SpecularIBLDegraded.frag"
 
 void main()
 {
@@ -39,14 +42,14 @@ void main()
     vec3 metallicMatColor = mix(vec3(0.04), diffuse_color_for_mix, metallicMapValue);
     // END FIXME
     
-    vec3 tmp = DiffuseComponent * mix(diffuseMatColor.xyz, vec3(0.0), metallicMapValue) + (metallicMatColor * SpecularComponent);
+    vec3 tmp = DiffuseComponent * ao + SpecularComponent * ao;
 
     vec3 emitCol = diffuseMatColor.xyz + (diffuseMatColor.xyz * diffuseMatColor.xyz * emitMapValue * emitMapValue * 10.0);
-    vec4 color_1 = vec4(tmp * ao + (emitMapValue * emitCol), 1.0);
+    vec4 color_1 = vec4(tmp + (emitMapValue * emitCol), 1.0);
 
     // Fog
-    float depth = texture(depth_stencil, tc).x;
-    vec4 xpos = getPosFromUVDepth(vec3(tc, depth), u_inverse_projection_matrix);
+    float z = texture(depth_stencil, tc).x;
+    vec4 xpos = getPosFromUVDepth(vec3(tc, z), u_inverse_projection_matrix);
     float dist = length(xpos.xyz);
     // fog density
     float factor = (1.0 - exp(u_fog_data.w * dist));
@@ -56,7 +59,7 @@ void main()
     color_1 = color_1 + vec4(fog, factor);
 
     // For skybox blending later
-    if (depth == 1.0)
+    if (z == 1.0)
     {
         color_1 = bg_color;
     }

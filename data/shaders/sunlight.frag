@@ -1,5 +1,10 @@
 uniform sampler2D ntex;
+#if defined(GL_ES) && defined(GL_FRAGMENT_PRECISION_HIGH)
+uniform highp sampler2D dtex;
+#else
 uniform sampler2D dtex;
+#endif
+uniform sampler2D ctex;
 
 uniform vec3 sundirection;
 uniform vec3 sun_color;
@@ -24,15 +29,19 @@ void main() {
     vec4 xpos = getPosFromUVDepth(vec3(uv, z), u_inverse_projection_matrix);
 
     vec3 norm = DecodeNormal(texture(ntex, uv).xy);
-    float roughness = texture(ntex, uv).z;
+    float roughness = 1.0 - texture(ntex, uv).z;
+    float metallic = texture(ntex, uv).w;
     vec3 eyedir = -normalize(xpos.xyz);
 
     vec3 Lightdir = SunMRP(norm, eyedir);
     float NdotL = clamp(dot(norm, Lightdir), 0., 1.);
+    
+    vec3 base_color = texture(ctex, uv).xyz;
+    vec3 diffuse_color = (1.0 - metallic) * base_color;
 
-    vec3 Specular = SpecularBRDF(norm, eyedir, Lightdir, vec3(1.), roughness);
-    vec3 Diffuse = DiffuseBRDF(norm, eyedir, Lightdir, vec3(1.), roughness);
+    vec3 Specular = SpecularBRDF(norm, eyedir, Lightdir, base_color, roughness, metallic);
+    vec3 Diffuse = DiffuseBRDF(norm, eyedir, Lightdir, diffuse_color, roughness);
 
-    Diff = vec4(NdotL * Diffuse * sun_color, 1.);
-    Spec = vec4(NdotL * Specular * sun_color, 1.);
+    Diff = vec4(sun_color * NdotL * Diffuse, 1.);
+    Spec = vec4(sun_color * NdotL * Specular, 1.);
 }
